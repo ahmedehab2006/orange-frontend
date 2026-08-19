@@ -1,9 +1,7 @@
-function Header() {
+function Header({ title }) {
     return (
         <header className="header">
-            <h1>Network Enhancement Insights</h1>
-
-
+            <h1>{title}</h1>
         </header>
     );
 }
