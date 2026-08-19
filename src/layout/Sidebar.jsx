@@ -1,39 +1,43 @@
-import { NavLink } from "react-router-dom";
 
-function Sidebar() {
+import { NavLink } from 'react-router-dom';
+
+const navItems = [
+    { path: '/', label: 'Dashboard', icon: '▦' },
+    { path: '/analytics', label: 'Analytics', icon: '▤' },
+    { path: '/dial-search', label: 'Dial Search', icon: '⌕' },
+    { path: '/data-table', label: 'Data Table', icon: '☰' },
+    { path: '/upload', label: 'Upload', icon: '⇧' },
+];
+
+export default function Sidebar() {
     return (
-        <aside className="sidebar">
-
+        <div className="sidebar">
             <div className="logo">
-                Orange
+                <div className="logo-icon">N</div>
+                <div>
+                    <h3>NEI</h3>
+                    <span>Orange Egypt</span>
+                </div>
             </div>
 
             <nav className="sidebar-nav">
-
-                <NavLink to="/">
-                    Dashboard
-                </NavLink>
-
-                <NavLink to="/analytics">
-                    Analytipps
-                </NavLink>
-
-                <NavLink to="/dial-search">
-                    Dial Search
-                </NavLink>
-
-                <NavLink to="/data-table">
-                    Data Table
-                </NavLink>
-
-                <NavLink to="/upload">
-                    Upload
-                </NavLink>
-
+                {navItems.map((item) => (
+                    <NavLink
+                        key={item.path}
+                        to={item.path}
+                        className={({ isActive }) => (isActive ? 'active' : '')}
+                    >
+                        <span>{item.icon}</span>
+                        <span>{item.label}</span>
+                    </NavLink>
+                ))}
             </nav>
 
-        </aside>
+            <div className="data-freshness">
+                <small>DATA FRESHNESS</small>
+                <strong>Updated Jul 6, 2026</strong>
+                <span>Weekly batch · 15 sites</span>
+            </div>
+        </div>
     );
 }
-
-export default Sidebar;
