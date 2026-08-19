@@ -1,5 +1,9 @@
 function Analytics() {
-    return <h1>Analytics Page</h1>;
+    return (
+        <h1 style={{ color: "black", padding: "30px" }}>
+            Welcome to Analytics
+        </h1>
+    );
 }
 
 export default Analytics;

@@ -9,11 +9,27 @@ function Sidebar() {
             </div>
 
             <nav className="sidebar-nav">
-                <NavLink to="/Dashboard">Dashboard</NavLink>
-                <NavLink to="/analytics">Analytics</NavLink>
-                <NavLink to="/dial-search">Dial Search</NavLink>
-                <NavLink to="/data-table">Data Table</NavLink>
-                <NavLink to="/upload">Upload</NavLink>
+
+                <NavLink to="/">
+                    Dashboard
+                </NavLink>
+
+                <NavLink to="/analytics">
+                    Analytipps
+                </NavLink>
+
+                <NavLink to="/dial-search">
+                    Dial Search
+                </NavLink>
+
+                <NavLink to="/data-table">
+                    Data Table
+                </NavLink>
+
+                <NavLink to="/upload">
+                    Upload
+                </NavLink>
+
             </nav>
 
         </aside>
