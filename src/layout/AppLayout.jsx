@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import '../App.css'; // تأكدي من استدعاء ملف التنسيقات
 
 const PAGE_TITLES = {
     '/': 'Main Dashboard',
@@ -19,7 +20,12 @@ export default function AppLayout() {
             <Sidebar />
             <div className="main-content">
                 <Header title={title} />
-                <Outlet />
+
+                {/* الجزء الجديد اللي هيعمل المسافات المظبوطة للصفحات */}
+                <div className="page-wrapper">
+                    <Outlet />
+                </div>
+
             </div>
         </div>
     );

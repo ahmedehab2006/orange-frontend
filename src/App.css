@@ -1,10 +1,16 @@
+/* ================== المتغيرات الثابتة ================== */
+:root {
+  --sidebar-width: 250px;
+}
+
+/* ================== الهيكل الخارجي ================== */
 .app-layout {
   display: flex;
   min-height: 100vh;
+  background: var(--color-bg);
 }
 
-/* Sidebar */
-
+/* ================== القائمة الجانبية (Sidebar) ================== */
 .sidebar {
   width: var(--sidebar-width);
   height: 100vh;
@@ -13,17 +19,19 @@
   position: fixed;
   left: 0;
   top: 0;
+  z-index: 100;
+  /* لضمان ظهور القائمة فوق المحتوى */
   display: flex;
   flex-direction: column;
 }
 
 .logo {
-  height: 50px;
+  height: 70px;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: 0 var(--space-sm);
-  border-bottom: 1px solid #eee;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .logo-icon {
@@ -41,15 +49,16 @@
 
 .logo h3 {
   font-size: var(--text-base);
+  color: var(--color-text-dark);
+  margin: 0;
 }
 
 .logo span {
   color: var(--color-text-muted);
-  font-size: var(--text-base);
+  font-size: var(--text-xs);
 }
 
-/* Navigation */
-
+/* عناصر القائمة الجانبية */
 .sidebar-nav {
   margin-top: var(--space-md);
 }
@@ -57,13 +66,15 @@
 .sidebar-nav a {
   height: 48px;
   margin: var(--space-xs) var(--space-md) var(--space-xs) 0;
-  padding: 0 var(--space-md);
+  padding: 0 24px;
   display: flex;
   align-items: center;
-  gap: var(--space-lg);
+  gap: var(--space-md);
   text-decoration: none;
   color: var(--color-nav-text);
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .sidebar-nav a.active {
@@ -71,59 +82,76 @@
   color: var(--color-orange);
 }
 
-.sidebar-nav a:hover {
-  background: var(--color-orange-bg-light);
+.sidebar-nav a:hover:not(.active) {
+  background: var(--color-grey-bg);
 }
 
-/* Data freshness */
-
+/* كارت الإحصائيات أسفل القائمة */
 .data-freshness {
   margin-top: auto;
   margin-bottom: 30px;
   padding: var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  margin-left: 0;
-  margin-right: var(--space-md);
+  margin-left: 20px;
+  margin-right: 20px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 4px;
+  background: var(--color-white);
 }
 
 .data-freshness small {
   color: var(--color-text-muted);
   font-weight: bold;
+  font-size: 10px;
 }
 
 .data-freshness strong {
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
+  color: var(--color-text-dark);
 }
 
 .data-freshness span {
   color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  font-size: 11px;
 }
 
-/* Main */
-
+/* ================== المنطقة الرئيسية (Main Content) ================== */
 .main-content {
   margin-left: var(--sidebar-width);
+  /* هذا السطر يمنع التداخل مع القائمة الجانبية */
   width: calc(100% - var(--sidebar-width));
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-/* Header */
-
+/* ================== الهيدر (Header) ================== */
 .header {
   height: 70px;
   background: var(--color-white);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
-  padding: 0 30px;
+  padding: 0 32px;
+  position: sticky;
+  /* لجعل الهيدر ثابت في الأعلى عند النزول بالصفحة */
+  top: 0;
+  z-index: 50;
 }
 
 .header h1 {
-  font-size: var(--text-xl);
+  font-size: 22px;
+  font-weight: 700;
   color: var(--color-text-dark);
+  margin: 0;
+}
+
+/* ================== غلاف الصفحات (Page Wrapper) ================== */
+.page-wrapper {
+  padding: 28px 32px;
+  /* هذا السطر يضبط مسافات محتوى أي صفحة */
+  flex: 1;
+  width: 100%;
 }

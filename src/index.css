@@ -1,56 +1,38 @@
+/* ================== المتغيرات العامة (Global Variables) ================== */
 :root {
-  /* --- الألوان --- */
   --color-orange: #ff7900;
   --color-orange-bg: #fff1e6;
   --color-orange-bg-light: #fff5ee;
-
   --color-teal: #0e9384;
   --color-teal-bg: #e6f6f4;
-
   --color-red: #f04438;
   --color-red-bg: #fef3f2;
-
   --color-green: #12b76a;
   --color-green-bg: #ecfdf3;
-
   --color-amber: #f79009;
   --color-amber-bg: #fff7ed;
-
   --color-grey-bg: #f2f4f7;
   --color-grey-text: #475467;
-
   --color-text-dark: #1e293b;
   --color-text-muted: #64748b;
   --color-nav-text: #52627a;
-
   --color-border: #ddd;
   --color-bg: #f5f6f8;
   --color-white: #fff;
-
-  /* --- المسافات --- */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
-
-  /* --- الاستدارة --- */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-
-  /* --- أحجام الخطوط --- */
   --text-xs: 11px;
   --text-sm: 13px;
   --text-base: 14px;
   --text-lg: 18px;
   --text-xl: 22px;
-
-  /* --- الظل --- */
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
-
-  /* --- مقاسات ثابتة --- */
-  --sidebar-width: 273px;
 }
 
 * {
@@ -64,130 +46,24 @@ body {
   background: var(--color-bg);
 }
 
-/* ========== Layout ========== */
-
-.app-layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: var(--sidebar-width);
-  height: 100vh;
+/* ================== المكونات المشتركة (Shared Components) ================== */
+/* الكروت (Cards) */
+.card {
   background: var(--color-white);
-  border-right: 1px solid var(--color-border);
-  position: fixed;
-  left: 0;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.logo {
-  height: 50px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: 0 var(--space-sm);
-  border-bottom: 1px solid #eee;
-}
-
-.logo-icon {
-  width: 38px;
-  height: 38px;
-  background: var(--color-orange);
-  color: var(--color-white);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 20px;
-}
-
-.logo h3 {
-  font-size: var(--text-base);
-}
-
-.logo span {
-  color: var(--color-text-muted);
-  font-size: var(--text-base);
-}
-
-.sidebar-nav {
-  margin-top: var(--space-md);
-}
-
-.sidebar-nav a {
-  height: 48px;
-  margin: var(--space-xs) var(--space-md) var(--space-xs) 0;
-  padding: 0 var(--space-md);
-  display: flex;
-  align-items: center;
-  gap: var(--space-lg);
-  text-decoration: none;
-  color: var(--color-nav-text);
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-}
-
-.sidebar-nav a.active {
-  background: var(--color-orange-bg);
-  color: var(--color-orange);
-}
-
-.sidebar-nav a:hover {
-  background: var(--color-orange-bg-light);
-}
-
-.data-freshness {
-  margin-top: auto;
-  margin-bottom: 30px;
-  padding: var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  margin-left: 0;
-  margin-right: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+  padding: var(--space-lg) 22px;
+  box-shadow: var(--shadow-card);
 }
 
-.data-freshness small {
-  color: var(--color-text-muted);
-  font-weight: bold;
-}
-
-.data-freshness strong {
-  font-size: var(--text-base);
-}
-
-.data-freshness span {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
-.main-content {
-  margin-left: var(--sidebar-width);
-  width: calc(100% - var(--sidebar-width));
-  min-height: 100vh;
-}
-
-.header {
-  height: 70px;
-  background: var(--color-white);
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  padding: 0 30px;
-}
-
-.header h1 {
-  font-size: var(--text-xl);
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
   color: var(--color-text-dark);
+  margin-bottom: var(--space-md);
 }
 
-/* ========== Badge ========== */
-
+/* العلامات (Badges) */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -196,40 +72,11 @@ body {
   border-radius: var(--radius-sm);
   white-space: nowrap;
   line-height: 1;
-  font-family: 'Inter', Helvetica, Arial, sans-serif;
 }
 
 .badge--pill {
   font-size: var(--text-xs);
   padding: 3px var(--space-sm);
-}
-
-.badge--tag {
-  width: 22px;
-  height: 22px;
-  font-size: var(--text-xs);
-}
-
-.badge--chip {
-  font-size: var(--text-xs);
-  padding: 4px 9px;
-}
-
-.badge--chip-sm {
-  font-size: var(--text-xs);
-  padding: 2px var(--space-sm);
-}
-
-.badge--flag {
-  font-size: var(--text-xs);
-  padding: 3px var(--space-sm);
-  gap: var(--space-xs);
-}
-
-.badge--status {
-  font-size: var(--text-sm);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
 }
 
 .badge--new {
@@ -257,24 +104,98 @@ body {
   color: var(--color-green);
 }
 
-.badge--warning {
-  background: var(--color-amber-bg);
-  color: var(--color-amber);
+/* الأزرار (Buttons) */
+.btn {
+  border-radius: var(--radius-md);
+  padding: 9px 18px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
 }
 
-/* ========== Card ========== */
-
-.card {
+.btn--outline {
   background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg) 22px;
-  box-shadow: var(--shadow-card);
+  border-color: var(--color-border);
+  color: var(--color-text-dark);
 }
 
-.card-title {
-  font-size: var(--text-lg);
-  font-weight: 600;
+.btn--outline:hover {
+  background: var(--color-grey-bg);
+}
+
+.btn--primary {
+  background: var(--color-orange);
+  color: var(--color-white);
+}
+
+.btn--primary:hover {
+  background: #e56d00;
+}
+
+/* الفلاتر (Filters) */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.filter-select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 30px 8px 10px;
+  font-size: var(--text-sm);
   color: var(--color-text-dark);
-  margin-bottom: var(--space-md);
+  background: var(--color-white);
+  min-width: 130px;
+  cursor: pointer;
+}
+
+/* حالات التحميل والخطأ (Loading & Errors) */
+.skeleton-line {
+  background: linear-gradient(90deg, var(--color-grey-bg) 25%, #e5e7eb 37%, var(--color-grey-bg) 63%);
+  background-size: 400% 100%;
+  border-radius: 4px;
+  animation: skeleton-pulse 1.4s ease infinite;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.error-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-red);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.error-inline button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  font-size: var(--text-xs);
+  color: var(--color-text-dark);
+  cursor: pointer;
 }
