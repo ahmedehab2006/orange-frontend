@@ -118,7 +118,6 @@ export function TrendBar({
 }) {
     return (
         <div className="bar-wrapper">
-
             <span className="bar-value">
                 {value}
             </span>
@@ -133,11 +132,9 @@ export function TrendBar({
             <span className="week-label">
                 {label}
             </span>
-
         </div>
     );
 }
-
 
 export function RolloutBar({
     value,
