@@ -74,3 +74,94 @@ export function Field({ label, value }) {
         </div>
     );
 }
+export function BreakdownRow({
+    label,
+    count,
+    percentage,
+    color = "gray",
+}) {
+    return (
+        <div className="breakdown-item">
+
+            <div className="breakdown-info">
+                <span>
+                    <span className={`legend-dot ${color}`} />
+                    {label}
+                </span>
+
+                <strong>{count}</strong>
+            </div>
+
+            <div className="progress-bar">
+                <div
+                    className={`progress-fill ${color}`}
+                    style={{
+                        width: `${percentage}%`,
+                    }}
+                />
+            </div>
+
+            <span className="percentage">
+                {percentage}%
+            </span>
+
+        </div>
+    );
+}
+
+
+export function TrendBar({
+    value,
+    height,
+    label,
+    color = "both",
+}) {
+    return (
+        <div className="bar-wrapper">
+
+            <span className="bar-value">
+                {value}
+            </span>
+
+            <div
+                className={`trend-bar ${color}`}
+                style={{
+                    height: `${height}%`,
+                }}
+            />
+
+            <span className="week-label">
+                {label}
+            </span>
+
+        </div>
+    );
+}
+
+
+export function RolloutBar({
+    value,
+    height,
+    label,
+}) {
+    return (
+        <div className="rollout-bar-wrapper">
+
+            <span className="rollout-value">
+                {value}
+            </span>
+
+            <div
+                className="rollout-bar"
+                style={{
+                    height: `${height}%`,
+                }}
+            />
+
+            <span className="rollout-label">
+                {label}
+            </span>
+
+        </div>
+    );
+}
