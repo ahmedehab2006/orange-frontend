@@ -64,12 +64,16 @@
 }
 
 .sidebar-nav a {
-  height: 48px;
-  margin: var(--space-xs) var(--space-md) var(--space-xs) 0;
-  padding: 0 24px;
+  height: 38px !important;
+  /* تقليل ارتفاع الزرار ليصبح أصغر وأكثر تناسقاً */
+  margin: 2px 12px 2px 0 !important;
+  /* تقليل الهوامش العلوية والسفلية بين الأزرار */
+  padding: 0 16px !important;
+  /* تقليل الهوامش الداخلية أفقياً */
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 12px !important;
+  /* تقليل المسافة بين الأيقونة والكلام جوه الزر */
   text-decoration: none;
   color: var(--color-nav-text);
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
@@ -150,8 +154,49 @@
 
 /* ================== غلاف الصفحات (Page Wrapper) ================== */
 .page-wrapper {
-  padding: 28px 32px;
-  /* هذا السطر يضبط مسافات محتوى أي صفحة */
+  padding: 0.3px 0.3px;
+  /* الرقم الأول 6px لتقليل المسافة من فوق، والثاني 12px لتقليل المسافة من الجانب */
   flex: 1;
   width: 100%;
+}
+
+/* للاب توب والشاشات الكبيرة: الكروت بتنزل جنب بعضها (4 أعمدة) */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* للشاشات المتوسطة (أقل من 1200px): الكروت بتتحول لعمودين */
+@media (max-width: 1200px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* للموبايل (أقل من 768px): القائمة الجانبية تصغر والكروت تنزل تحت بعضها في عمود واحد */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px !important;
+    /* تصغير القائمة لتناسب الموبايل */
+  }
+
+  .main-content,
+  .dashboard-container {
+    margin-left: 60px !important;
+    width: calc(100% - 60px) !important;
+    padding: 10px !important;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr !important;
+    /* الكروت تحت بعضها */
+  }
+
+  .filters-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
 }

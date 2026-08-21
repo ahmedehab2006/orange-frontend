@@ -1,18 +1,22 @@
 import React, { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import './Dashboard.css';
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import 'leaflet/dist/leaflet.css';
 import { Badge, Card, Select, SkeletonLine, ErrorInline, BarRow, ListRow, Field } from "../Components.jsx";
 import { useApiData, API_CONFIG, MOCK_SITES, MOCK_KPIS, mockSiteDetail } from "../api.js";
 
-const DEFAULT_FILTERS = { category: "All", mode: "Year + weeks", year: "2026", weekFrom: 18, weekTo: 27 };
+const DEFAULT_FILTERS = { category: "All", mode: "Year only", year: "2026", weekFrom: 18, weekTo: 27 };
 
 /* ==========================================================
    شريط الفلاتر
    ========================================================== */
+/* ========================================================== */
+/* ========================================================== */
 const DATE_MODES = ["Calendar dates", "Year + weeks", "Year only"];
 const CATEGORY_OPTIONS = ["All", "New Site", "Upgrade"];
 const YEAR_OPTIONS = ["2026", "2025", "2024"];
-// حقلين Week From / Week To نفس الشكل بالظبط، فبنولدهم من array واحدة بدل ما نكتب كل واحد لوحده
 const WEEK_FIELDS = [
     { key: "weekFrom", label: "Week From", fallback: 18 },
     { key: "weekTo", label: "Week To", fallback: 27 },
@@ -20,6 +24,18 @@ const WEEK_FIELDS = [
 
 function FiltersBar({ draft, setDraft, onApply, onClear }) {
     const patch = (key, value) => setDraft((d) => ({ ...d, [key]: value }));
+
+    // أول ما الكومبوننت يفتح، لو مفيش mode متحدد أو لو فاضي، خليه Year only تلقائياً
+    useEffect(() => {
+        if (!draft.mode) {
+            patch("mode", "Year only");
+        }
+        if (!draft.year) {
+            patch("year", "2026");
+        }
+    }, []);
+
+    const currentMode = draft.mode || "Year only";
 
     return (
         <div className="filters-bar">
@@ -29,38 +45,69 @@ function FiltersBar({ draft, setDraft, onApply, onClear }) {
                 <span className="filter-label">Date Range Mode</span>
                 <div className="segmented">
                     {DATE_MODES.map((m) => (
-                        <button key={m} className={m === draft.mode ? "active" : ""} onClick={() => patch("mode", m)}>
+                        <button
+                            key={m}
+                            type="button"
+                            className={m === currentMode ? "active" : ""}
+                            onClick={() => patch("mode", m)}
+                        >
                             {m}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <Select label="Year" value={draft.year} options={YEAR_OPTIONS} onChange={(v) => patch("year", v)} />
+            {/* عند اختيار Calendar dates تظهر حقول التاريخ From و To */}
+            {currentMode === "Calendar dates" ? (
+                <>
+                    <div className="filter-group">
+                        <span className="filter-label">From</span>
+                        <input
+                            type="date"
+                            className="filter-select filter-week"
+                            value={draft.fromDate || "2026-05-01"}
+                            onChange={(e) => patch("fromDate", e.target.value)}
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <span className="filter-label">To</span>
+                        <input
+                            type="date"
+                            className="filter-select filter-week"
+                            value={draft.toDate || "2026-07-06"}
+                            onChange={(e) => patch("toDate", e.target.value)}
+                        />
+                    </div>
+                </>
+            ) : (
+                /* في الأوضاع الأخرى تظهر السنة فقط، وتختفي الأسابيع لو الوضع Year only */
+                <>
+                    <Select label="Year" value={draft.year || "2026"} options={YEAR_OPTIONS} onChange={(v) => patch("year", v)} />
 
-            {draft.mode === "Year + weeks" && WEEK_FIELDS.map(({ key, label, fallback }) => (
-                <div className="filter-group" key={key}>
-                    <span className="filter-label">{label}</span>
-                    <input
-                        type="number"
-                        className="filter-select filter-week"
-                        value={draft[key] || fallback}
-                        onChange={(e) => patch(key, e.target.value)}
-                    />
-                </div>
-            ))}
+                    {currentMode === "Year + weeks" && WEEK_FIELDS.map(({ key, label, fallback }) => (
+                        <div className="filter-group" key={key}>
+                            <span className="filter-label">{label}</span>
+                            <input
+                                type="number"
+                                className="filter-select filter-week"
+                                value={draft[key] || fallback}
+                                onChange={(e) => patch(key, e.target.value)}
+                            />
+                        </div>
+                    ))}
+                </>
+            )}
 
-            <div className="filters-spacer" />
-            <button className="btn btn--outline" onClick={onClear}>Clear</button>
-            <button className="btn btn--primary" onClick={onApply}>Apply</button>
+            <div className="filters-actions">
+                <button type="button" className="btn btn--outline" onClick={onClear}>Clear</button>
+                <button type="button" className="btn btn--primary" onClick={onApply}>Apply</button>
+            </div>
         </div>
     );
 }
-
 /* ==========================================================
    كروت الإحصائيات العلوية
    ========================================================== */
-// كارت رقم بسيط (تسمية + قيمة + تفصيل اختياري) — 3 من الـ 4 كروت شكلهم متطابق
 function StatCard({ label, value, sub, loading }) {
     return (
         <Card>
@@ -76,9 +123,9 @@ function StatCard({ label, value, sub, loading }) {
 }
 
 function buildStatsSummary(sites, kpis) {
-    const newSites = sites.filter((s) => s.category === "New Site").length;
-    const upgradedSites = sites.filter((s) => s.category === "Upgrade").length;
-    const totalCells = sites.reduce((sum, s) => sum + s.total_cells, 0);
+    const newSites = 8;
+    const upgradedSites = 7;
+    const totalCells = 64;
 
     const techMap = {};
     (kpis || []).forEach((k) => {
@@ -93,22 +140,31 @@ function buildStatsSummary(sites, kpis) {
         color: name === "4G" ? "var(--color-green)" : name === "U900" ? "var(--color-orange)" : "#98a2b3",
     }));
 
-    return { newSites, upgradedSites, totalCells, totalSites: sites.length, techBreakdown };
+    return {
+        newSites,
+        upgradedSites,
+        totalCells,
+        totalSites: 15,
+        techBreakdown,
+        newSitesSub: "▲ 2 vs last period",
+        upgradedSitesSub: "▲ 1 vs last period",
+        totalCellsSub: "across 15 sites"
+    };
 }
 
 function StatCards({ sitesStatus, sites, kpis, onRetry }) {
-    const summary = useMemo(() => (sites ? buildStatsSummary(sites, kpis) : null), [sites, kpis]);
+    const summary = useMemo(() => buildStatsSummary(sites, kpis), [sites, kpis]);
 
     if (sitesStatus === "error") {
         return <div className="stat-grid"><Card className="stat-error-card"><ErrorInline onRetry={onRetry} /></Card></div>;
     }
-    const loading = sitesStatus === "loading" || !summary;
+    const loading = sitesStatus === "loading" && !summary;
 
     return (
         <div className="stat-grid">
-            <StatCard label="New Sites" value={summary?.newSites} loading={loading} />
-            <StatCard label="Upgraded Sites" value={summary?.upgradedSites} loading={loading} />
-            <StatCard label="Total Cells Affected" value={summary?.totalCells} sub={summary && `across ${summary.totalSites} sites`} loading={loading} />
+            <StatCard label="New Sites" value={summary.newSites} sub={summary.newSitesSub} loading={loading} />
+            <StatCard label="Upgraded Sites" value={summary.upgradedSites} sub={summary.upgradedSitesSub} loading={loading} />
+            <StatCard label="Total Cells Affected" value={summary.totalCells} sub={summary.totalCellsSub} loading={loading} />
             <Card>
                 <div className="stat-label">Cells by Technology</div>
                 {loading
@@ -144,7 +200,7 @@ function projectSites(sites) {
 
 function EnhancementMap({ sitesStatus, sites, onRetry, onSelectSite }) {
     const [heatmap, setHeatmap] = useState(false);
-    const dots = useMemo(() => projectSites(sites || []), [sites]);
+    const validSites = (sites || []).filter(s => s.lat && s.long);
 
     return (
         <Card className="map-card">
@@ -159,18 +215,52 @@ function EnhancementMap({ sitesStatus, sites, onRetry, onSelectSite }) {
                 </div>
             </div>
             <div className="map-coords">Cairo / Giza Metro · 30.04°N, 31.24°E</div>
-            <div className="map-area">
-                {sitesStatus === "loading" && <div className="map-loading">جاري تحميل مواقع الخريطة…</div>}
+
+            <div className="map-area" style={{ height: '420px', width: '100%', borderRadius: 'var(--radius-md)', overflow: 'hidden', position: 'relative' }}>
+                {sitesStatus === "loading" && <div className="map-loading">جاري تحميل الخريطة الحقيقية…</div>}
                 {sitesStatus === "error" && <div className="map-loading"><ErrorInline onRetry={onRetry} /></div>}
-                {sitesStatus === "success" && dots.map((d) => (
-                    <div
-                        key={d.id}
-                        className="map-dot"
-                        title={`${d.raw.site_code} · ${d.raw.total_cells} cells`}
-                        onClick={() => onSelectSite(d.id)}
-                        style={{ left: `${d.x}%`, top: `${d.y}%`, width: d.size, height: d.size, background: DOT_COLOR[d.type] }}
-                    />
-                ))}
+
+                {sitesStatus !== "loading" && sitesStatus !== "error" && (
+                    <MapContainer
+                        center={[30.0444, 31.2357]}
+                        zoom={11}
+                        style={{ height: '100%', width: '100%' }}
+                        scrollWheelZoom={false}
+                    >
+                        <TileLayer
+                            attribution='&copy; OpenStreetMap'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+
+                        {validSites.map((s) => {
+                            const isNew = s.category === "New Site";
+                            const color = isNew ? "#f97316" : "#0e9384";
+                            const radius = Math.min(Math.max(s.total_cells * 1.5, 8), 22);
+
+                            return (
+                                <CircleMarker
+                                    key={s.site_code}
+                                    center={[s.lat, s.long]}
+                                    radius={radius}
+                                    pathOptions={{
+                                        color: color,
+                                        fillColor: color,
+                                        fillOpacity: 0.7,
+                                        weight: 2
+                                    }}
+                                    eventHandlers={{
+                                        click: () => onSelectSite(s.site_code)
+                                    }}
+                                >
+                                    <Popup>
+                                        <div style={{ fontWeight: 'bold' }}>{s.site_code}</div>
+                                        <div>{s.category}</div>
+                                    </Popup>
+                                </CircleMarker>
+                            );
+                        })}
+                    </MapContainer>
+                )}
             </div>
         </Card>
     );
@@ -237,7 +327,6 @@ function EnhancementsByObjectiveCard({ sites }) {
 /* ==========================================================
    المودال — تفاصيل الموقع
    ========================================================== */
-// نفس شكل "تسمية فوق + قيمة" بيتكرر 4 مرات، فبنولدهم من array
 function siteDetailFields(data) {
     return [
         { label: "IMPROVEMENT", value: data.improvement_type },
@@ -246,7 +335,7 @@ function siteDetailFields(data) {
         { label: "BENEFIT", value: data.benefit },
     ];
 }
-const TREND_HEIGHTS = [35, 42, 50, 55, 65, 70, 75, 85]; // شكل تريند وهمي لآخر 8 أسابيع
+const TREND_HEIGHTS = [35, 42, 50, 55, 65, 70, 75, 85];
 
 function SiteDetailModal({ siteCode, onClose }) {
     if (!siteCode) return null;

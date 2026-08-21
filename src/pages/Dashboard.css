@@ -14,8 +14,41 @@
     box-shadow: var(--shadow-card);
     padding: var(--space-md) 20px;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
-    gap: 32px;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+/* تنسيق حقول إدخال التاريخ لتتوافق مع تصميم الفلاتر الحالية وتحسين العرض */
+input[type="date"],
+.filter-week[type="date"] {
+    background: var(--color-white, #fff);
+    border: 1px solid var(--color-border, #ddd);
+    border-radius: var(--radius-md, 8px);
+    padding: 6px 8px;
+    font-size: var(--text-sm, 13px);
+    color: var(--color-text-dark, #1a1d29);
+    outline: none;
+    height: 38px;
+    width: 140px !important;
+    min-width: 140px !important;
+    box-sizing: border-box;
+}
+
+input[type="date"]:focus,
+.filter-week[type="date"]:focus {
+    border-color: var(--color-orange, #ff7900);
+}
+
+/* زرارين Clear و Apply — بيفضلوا مع بعض ومرميين لأقصى اليمين،
+   ولو المساحة ضاقت ينزلوا سطر جديد سوا بدل ما يتقسموا أو يخرجوا برا الكارت */
+.filters-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    margin-left: auto;
+    align-items: flex-end;
 }
 
 .segmented {
@@ -45,13 +78,13 @@
     font-weight: 700;
 }
 
-.filters-spacer {
-    flex: 1;
-}
-
 .filter-week {
-    width: 90px;
-    padding: 8px;
+    width: 60px !important;
+    /* تحديد عرض ثابت وصغير بالبكسل بدلاً من ch لضمان النتيجة */
+    min-width: 0 !important;
+    max-width: 50px !important;
+    padding: 6px 8px !important;
+    text-align: center;
 }
 
 /* كروت الإحصائيات */
@@ -59,36 +92,68 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
+    align-items: stretch !important;
 }
 
-.stat-label {
-    font-size: var(--text-xs);
-    font-weight: 700;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: .03em;
-    margin-bottom: 10px;
+/* تصغير الهوامش الداخلية للكروت لتصبح المسافات فوق وتحت الرقم أصغر وأجمل */
+.stat-grid .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100% !important;
+    box-sizing: border-box;
+    padding: 16px 20px !important;
+    /* تقليل الـ padding العلوي والسفلي */
 }
 
+/* تقليل المسافة فوق وتحت الرقم مباشرة */
 .stat-value {
     font-size: 30px;
     font-weight: 800;
     color: var(--color-text-dark);
     line-height: 1;
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+    /* تقليل المسافة السفلية للرقم لتناسب الشكل المطلوب */
 }
 
 .stat-sub {
     font-size: var(--text-sm);
     color: var(--color-text-muted);
-    margin-top: 8px;
+    margin-top: 0;
 }
 
-.stat-error-card {
-    grid-column: 1 / -1;
+.stat-grid .card h3,
+.stat-grid .card .card-title {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: var(--color-text-muted) !important;
+    margin-bottom: 0 !important;
+}
+
+/* تعديل لون علامة التحسن والنسبة لتكون باللون الأخضر الواضح */
+.stat-sub,
+.stat-sub span {
+    color: #10b981 !important;
+    font-weight: 600 !important;
+}
+
+/* ضبط الكارت الرابع (Cells by Technology) ليتطابق مع باقي الكروت */
+.stat-grid .card:last-child {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 120px;
+    flex-direction: column;
+    justify-content: space-between !important;
+    padding: 16px 20px !important;
+}
+
+.stat-grid .card:last-child .tech-row {
+    margin-top: 8px !important;
+}
+
+.stat-grid .card:last-child .tech-row:first-child {
+    margin-top: 4px !important;
 }
 
 /* نسب التكنولوجيا (خصوصية لمنطق الداشبورد نفسه - العرض العام لـ BarRow نقلته للملف المشترك) */
