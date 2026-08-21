@@ -109,7 +109,6 @@ export function BreakdownRow({
     );
 }
 
-
 export function TrendBar({
     value,
     height,
@@ -118,21 +117,62 @@ export function TrendBar({
 }) {
     return (
         <div className="bar-wrapper">
-            <span className="bar-value">
-                {value}
-            </span>
 
             <div
-                className={`trend-bar ${color}`}
-                style={{
-                    height: `${height}%`,
-                }}
-            />
+                className="bar-column"
+                style={{ height: `${height}%` }}
+            >
+                <span className="bar-value">
+                    {value}
+                </span>
+
+                <div className={`trend-bar ${color}`} />
+            </div>
 
             <span className="week-label">
                 {label}
             </span>
+
         </div>
+    );
+}
+/* مجموعة أزرار toggle (زي Both/New/Upgrade أو Site/Cell-level).
+   options: [[value, label], ...] */
+export function ToggleGroup({ options, value, onChange }) {
+    return (
+        <div className="control-group">
+            {options.map(([val, label]) => (
+                <button
+                    key={val}
+                    className={`control-button${value === val ? " active" : ""}`}
+                    onClick={() => onChange(val)}
+                >
+                    {label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+/* كارت "عنوان + subtitle + قايمة BreakdownRow" — بيتكرر في صفحة
+   Analytics 3 مرات (Type / Effect / Improvement) بنفس الهيكل بالظبط،
+   الفرق بس في العنوان والـ rows، فبقى component واحد بياخدهم كـ props. */
+export function BreakdownCard({ title, subtitle, rows }) {
+    return (
+        <Card className="analytics-card">
+            <div className="section-header">
+                <div>
+                    <h2>{title}</h2>
+                    <p>{subtitle}</p>
+                </div>
+            </div>
+
+            <div className="breakdown-list">
+                {rows.map((row) => (
+                    <BreakdownRow key={row.label} {...row} />
+                ))}
+            </div>
+        </Card>
     );
 }
 

@@ -1,7 +1,5 @@
-// ======================================================
-// 1) Imports
-// بنستورد React hooks + CSS + الـ API + الـ Components المشتركة
-// ======================================================
+// Analytics page — weekly trend, rollout, breakdowns, and the
+// customer-reach leaderboard.
 
 import { useMemo, useState } from "react";
 import "./Analytics.css";
@@ -14,463 +12,237 @@ import {
 } from "../api";
 
 import {
+    Badge,
     Card,
-    BreakdownRow,
+    ToggleGroup,
+    BreakdownCard,
     TrendBar,
     RolloutBar,
+    SkeletonLine,
+    ErrorInline,
 } from "../Components.jsx";
 
+const TREND_SPLIT_OPTIONS = [
+    ["both", "Both"],
+    ["new", "New Sites"],
+    ["upgrade", "Upgrades"],
+];
 
-// ======================================================
-// 2) Analytics Component
-// ده الـ component الرئيسي الخاص بصفحة Analytics
-// ======================================================
+const TREND_LEVEL_OPTIONS = [
+    ["site", "Site-level"],
+    ["cell", "Cell-level"],
+];
+
+// Show a compact fixed number of weeks at a time.
+// Pagination keeps the chart readable even with a long history.
+const WEEKS_PER_PAGE = 15;
+
+// Cell-level is derived from the site-level mock by scaling up —
+// there's no separate cell-level endpoint yet.
+const CELL_LEVEL_SCALE = 3.4;
 
 function Analytics() {
-
-    // --------------------------------------------------
-    // 3) State الخاصة بالـ Trend
-    // trendSplit:
-    // Both / New Sites / Upgrades
-    //
-    // trendLevel:
-    // Site-level / Cell-level
-    // --------------------------------------------------
-
     const [trendSplit, setTrendSplit] = useState("both");
     const [trendLevel, setTrendLevel] = useState("site");
+    const [weekPage, setWeekPage] = useState(0);
 
+    const {
+        data: trendResult,
+        status: trendStatus,
+        retry: retryTrend,
+    } = useApiData(API_CONFIG.endpoints.analyticsTrend, {}, MOCK_ANALYTICS_TREND);
 
-    // ==================================================
-    // 4) API Call رقم 1 - Weekly Trend
-    //
-    // بيجيب بيانات الـ Customers Reached لكل أسبوع.
-    // حاليًا MOCK_MODE = true لذلك بياخد
-    // MOCK_ANALYTICS_TREND من api.js.
-    // ==================================================
+    const {
+        data: kpiResult,
+        status: kpiStatus,
+        retry: retryKpi,
+    } = useApiData(API_CONFIG.endpoints.analyticsKpis, {}, MOCK_ANALYTICS_KPIS);
 
-    const { data: trendResult } = useApiData(
-        API_CONFIG.endpoints.analyticsTrend,
-        {},
-        MOCK_ANALYTICS_TREND
-    );
-
-
-    // ==================================================
-    // 5) API Call رقم 2 - Analytics KPIs
-    //
-    // بيجيب بيانات المواقع المستخدمة في:
-    // - Breakdowns
-    // - Leaderboard
-    // ==================================================
-
-    const { data: kpiResult } = useApiData(
-        API_CONFIG.endpoints.analyticsKpis,
-        {},
-        MOCK_ANALYTICS_KPIS
-    );
-
-
-    // ==================================================
-    // 6) حماية من null
-    //
-    // useApiData بيبدأ data بـ null.
-    // لذلك لو البيانات لسه مجاش:
-    // نستخدم Array فاضية بدل null
-    // عشان نقدر نستخدم map / filter بدون Error.
-    // ==================================================
-
-    const trendData = trendResult || [];
+    const fullTrendData = trendResult || [];
     const kpiData = kpiResult || [];
 
+    // Show only a compact page of weeks at a time.
+    const totalWeekPages = Math.max(
+        1,
+        Math.ceil(fullTrendData.length / WEEKS_PER_PAGE)
+    );
 
-    // ==================================================
-    // 7) تجهيز بيانات Weekly Trend
-    //
-    // هنا بنحدد القيمة اللي هتظهر في الـ chart
-    // حسب اختيار المستخدم:
-    //
-    // Both     -> كل العملاء
-    // New      -> العملاء من New Sites
-    // Upgrade  -> العملاء من Upgrades
-    // ==================================================
+    const currentWeekPage = Math.min(
+        weekPage,
+        totalWeekPages - 1
+    );
 
+    const startWeek = currentWeekPage * WEEKS_PER_PAGE;
+    const endWeek = startWeek + WEEKS_PER_PAGE;
+
+    const trendData = useMemo(() => {
+        return fullTrendData.slice(startWeek, endWeek);
+    }, [fullTrendData, startWeek, endWeek]);
+
+    // Weekly trend values, filtered by split (both/new/upgrade) and
+    // scaled by level (site/cell).
     const trend = useMemo(() => {
-
         return trendData.map((item) => {
+            const scale = trendLevel === "cell" ? CELL_LEVEL_SCALE : 1;
+            const total = item.customers_total * scale;
+            const newSites = item.new_sites_total * scale;
 
-            let total = item.customers_total;
-            let newSites = item.new_sites_total;
-
-
-            // ------------------------------------------
-            // لو المستخدم اختار Cell-level
-            // بنعمل scaling للـ mock data الحالية.
-            // ------------------------------------------
-
-            if (trendLevel === "cell") {
-                total *= 3.4;
-                newSites *= 3.4;
-            }
-
-
-            // ------------------------------------------
-            // New Sites فقط
-            // ------------------------------------------
-
-            if (trendSplit === "new") {
-                return newSites;
-            }
-
-
-            // ------------------------------------------
-            // Upgrades فقط
-            // ------------------------------------------
-
-            if (trendSplit === "upgrade") {
-                return total - newSites;
-            }
-
-
-            // ------------------------------------------
-            // Both
-            // ------------------------------------------
-
+            if (trendSplit === "new") return newSites;
+            if (trendSplit === "upgrade") return total - newSites;
             return total;
-
         });
-
     }, [trendData, trendSplit, trendLevel]);
 
-
-    // ==================================================
-    // 8) أكبر قيمة في الـ Trend
-    //
-    // بنستخدمها عشان نحسب ارتفاع كل Bar
-    // كنسبة من أكبر Bar.
-    // ==================================================
-
+    // Scale the visible 15-week page to the available chart height.
     const maxTrend = Math.max(...trend, 1);
 
-
-    // ==================================================
-    // 9) تجهيز بيانات Rollout
-    //
-    // بنستخدم بيانات الـ Trend الحالية ونطلع منها
-    // عدد الـ sites اللي هتظهر في كل أسبوع.
-    //
-    // حاليًا ده Mock calculation في الـ frontend.
-    // ==================================================
-
+    // Sites going live per week (mock calculation on the frontend).
     const rollout = useMemo(
         () =>
             trendData.map((item) => ({
                 week: `W${item.week_number}`,
-                value: Math.max(
-                    1,
-                    Math.round(item.new_sites_total / 40)
-                ),
+                value: Math.max(1, Math.round(item.new_sites_total / 40)),
             })),
         [trendData]
     );
 
+    const maxRollout = Math.max(...rollout.map((item) => item.value), 1);
 
-    // ==================================================
-    // 10) أكبر قيمة في Rollout
-    // عشان نحدد ارتفاع كل Bar.
-    // ==================================================
-
-    const maxRollout = Math.max(
-        ...rollout.map((item) => item.value),
-        1
-    );
-
-
-    // ==================================================
-    // 11) Helper لحساب عدد العناصر
-    //
-    // مثال:
-    // count("category", "New Site")
-    //
-    // معناها:
-    // هات عدد المواقع اللي category بتاعتها New Site.
-    // ==================================================
-
-    const count = (key, value) =>
-        kpiData.filter((item) => item[key] === value).length;
-
-
-    // ==================================================
-    // 12) Helper لحساب النسبة المئوية
-    //
-    // مثال:
-    // 4 من 8 = 50%
-    // ==================================================
-
-    const percentage = (value, total) =>
-        total ? Math.round((value / total) * 100) : 0;
-
-
-    // ==================================================
-    // 13) Type Breakdown
-    //
-    // بنحسب عدد:
-    // New Sites
-    // Upgrades
-    // ==================================================
-
-    const newSites = count("category", "New Site");
-    const upgrades = count("category", "Upgrade");
-
-
-    // ==================================================
-    // 14) Effect Breakdown
-    //
-    // بنحسب:
-    // Major
-    // Minor
-    // ==================================================
-
-    const major = count("effect_type", "Major");
-    const minor = count("effect_type", "Minor");
-
-
-    // ==================================================
-    // 15) Improvement Breakdown
-    //
-    // بنحسب:
-    // Outdoor
-    // Indoor
-    // ==================================================
-
-    const outdoor = count("improvement", "Outdoor");
-    const indoor = count("improvement", "Indoor");
-
-
-    // ==================================================
-    // 16) تجهيز Leaderboard
-    //
-    // بنرتب المواقع من الأعلى في عدد العملاء
-    // إلى الأقل.
-    // ==================================================
-
-    const leaderboard = useMemo(() => {
-
-        // ----------------------------------------------
-        // أكبر عدد عملاء عند أي Site
-        // ----------------------------------------------
-
-        const max = Math.max(
-            ...kpiData.map(
-                (item) => item.customers_total
-            ),
-            1
-        );
-
-
-        // ----------------------------------------------
-        // Sort + حساب نسبة كل Site
-        // ----------------------------------------------
-
-        return [...kpiData]
-            .sort(
-                (a, b) =>
-                    b.customers_total -
-                    a.customers_total
-            )
-            .map((site) => ({
-                ...site,
-
-                percentage: Math.round(
-                    (site.customers_total / max) * 100
-                ),
-            }));
-
+    // Single pass over kpiData to get every breakdown count at once,
+    // instead of filtering the array separately for each one.
+    const counts = useMemo(() => {
+        const acc = { category: {}, effect: {}, improvement: {} };
+        for (const item of kpiData) {
+            acc.category[item.category] = (acc.category[item.category] || 0) + 1;
+            acc.effect[item.effect_type] = (acc.effect[item.effect_type] || 0) + 1;
+            acc.improvement[item.improvement] = (acc.improvement[item.improvement] || 0) + 1;
+        }
+        return acc;
     }, [kpiData]);
 
+    const percentage = (value, total) => (total ? Math.round((value / total) * 100) : 0);
 
-    // ==================================================
-    // 17) إجمالي عدد العملاء
-    //
-    // reduce بتجمع customers_total لكل المواقع.
-    // ==================================================
+    const newSites = counts.category["New Site"] || 0;
+    const upgrades = counts.category["Upgrade"] || 0;
+    const major = counts.effect["Major"] || 0;
+    const minor = counts.effect["Minor"] || 0;
+    const outdoor = counts.improvement["Outdoor"] || 0;
+    const indoor = counts.improvement["Indoor"] || 0;
 
-    const totalCustomers = kpiData.reduce(
-        (sum, item) =>
-            sum + item.customers_total,
-        0
-    );
+    const breakdownCards = [
+        {
+            title: "By Enhancement Type",
+            subtitle: "Enhancement distribution",
+            rows: [
+                { label: "New Sites", count: newSites, percentage: percentage(newSites, newSites + upgrades), color: "orange" },
+                { label: "Upgrades", count: upgrades, percentage: percentage(upgrades, newSites + upgrades), color: "teal" },
+            ],
+        },
+        {
+            title: "By Effect Type",
+            subtitle: "Impact level distribution",
+            rows: [
+                { label: "Major", count: major, percentage: percentage(major, major + minor), color: "gray" },
+                { label: "Minor", count: minor, percentage: percentage(minor, major + minor), color: "gray" },
+            ],
+        },
+        {
+            title: "By Improvement Type",
+            subtitle: "Improvement type distribution",
+            rows: [
+                { label: "Outdoor", count: outdoor, percentage: percentage(outdoor, outdoor + indoor), color: "purple" },
+                { label: "Indoor", count: indoor, percentage: percentage(indoor, outdoor + indoor), color: "purple" },
+            ],
+        },
+    ];
 
+    // Leaderboard: sorted by customers, with a performance color.
+    const leaderboard = useMemo(() => {
+        const max = Math.max(...kpiData.map((item) => item.customers_total), 1);
+        return [...kpiData]
+            .sort((a, b) => b.customers_total - a.customers_total)
+            .map((site) => {
+                const performance =
+                    site.customers_total < 50
+                        ? "low"
+                        : site.customers_total < 200
+                            ? "average"
+                            : "good";
+                return {
+                    ...site,
+                    percentage: Math.round((site.customers_total / max) * 100),
+                    performance,
+                };
+            });
+    }, [kpiData]);
 
-    // ==================================================
-    // 18) بداية الـ UI
-    // ==================================================
+    const totalCustomers = kpiData.reduce((sum, item) => sum + item.customers_total, 0);
+
+    const trendSubtitle = `${trendLevel === "site" ? "Site-level" : "Cell-level"} · ${trendSplit === "both"
+        ? "New + Upgrades combined"
+        : trendSplit === "new"
+            ? "New sites only"
+            : "Upgrades only"
+        }`;
 
     return (
         <div className="analytics-page">
-
-
-            {/* ==========================================
-                19) Page Header
-                عنوان صفحة Analytics
-               ========================================== */}
-
-            <div className="analytics-header">
-                <h1>Analytics & Trends</h1>
-
-                <p>
-                    Track network enhancement trends
-                    and performance.
-                </p>
-            </div>
-
-
-            {/* ==========================================
-                20) Trend Controls
-                أزرار Both / New Sites / Upgrades
-                و Site-level / Cell-level
-               ========================================== */}
-
             <div className="analytics-controls">
+                <ToggleGroup options={TREND_SPLIT_OPTIONS} value={trendSplit} onChange={setTrendSplit} />
 
-                <div className="control-group">
-
-                    {[
-                        ["both", "Both"],
-                        ["new", "New Sites"],
-                        ["upgrade", "Upgrades"],
-                    ].map(([value, label]) => (
-
+                <div className="analytics-right-controls">
+                    <div className="week-pagination">
                         <button
-                            key={value}
-                            className={
-                                trendSplit === value
-                                    ? "control-button active"
-                                    : "control-button"
-                            }
+                            className="week-page-button"
                             onClick={() =>
-                                setTrendSplit(value)
+                                setWeekPage((page) => Math.max(page - 1, 0))
                             }
+                            disabled={weekPage === 0}
+                            aria-label="Previous weeks"
                         >
-                            {label}
+                            ‹
                         </button>
 
-                    ))}
-
-                </div>
-
-
-                <div className="control-group">
-
-                    {[
-                        ["site", "Site-level"],
-                        ["cell", "Cell-level"],
-                    ].map(([value, label]) => (
+                        <span className="week-page-info">
+                            {startWeek + 1}–{Math.min(endWeek, trendData.length)}
+                        </span>
 
                         <button
-                            key={value}
-                            className={
-                                trendLevel === value
-                                    ? "control-button active"
-                                    : "control-button"
-                            }
+                            className="week-page-button"
                             onClick={() =>
-                                setTrendLevel(value)
+                                setWeekPage((page) =>
+                                    Math.min(page + 1, totalWeekPages - 1)
+                                )
                             }
+                            disabled={weekPage >= totalWeekPages - 1}
+                            aria-label="Next weeks"
                         >
-                            {label}
+                            ›
                         </button>
-
-                    ))}
-
-                </div>
-
-            </div>
-
-
-            {/* ==================================================
-                21) Charts Section
-                فيها:
-                - Customers Reached — Weekly Trend
-                - Rollout Over Time
-               ================================================== */}
-
-            <div className="analytics-charts">
-
-
-                {/* ==============================================
-                    22) Customers Reached — Weekly Trend
-                   ============================================== */}
-
-                <Card className="analytics-card">
-
-                    <div className="section-header">
-
-                        <div>
-
-                            <h2>
-                                Customers Reached —
-                                Weekly Trend
-                            </h2>
-
-                            <p>
-                                {trendLevel === "site"
-                                    ? "Site-level"
-                                    : "Cell-level"}{" "}
-                                ·{" "}
-                                {trendSplit === "both"
-                                    ? "New + Upgrades combined"
-                                    : trendSplit === "new"
-                                        ? "New sites only"
-                                        : "Upgrades only"}
-                            </p>
-
-                        </div>
-
                     </div>
 
+                    <ToggleGroup
+                        options={TREND_LEVEL_OPTIONS}
+                        value={trendLevel}
+                        onChange={setTrendLevel}
+                    />
+                </div>
+            </div>
 
-                    {/* ------------------------------------------
-                        الـ Chart نفسه
-                       ------------------------------------------ */}
+            <div className="analytics-charts">
+                {/* Customers Reached — Weekly Trend */}
+                <Card className="analytics-card">
+                    <div className="section-header">
+                        <div>
+                            <h2>Customers Reached — Weekly Trend</h2>
+                            <p>
+                                Weekly customers reached through network enhancements
+                            </p>
+                        </div>
+                    </div>
 
                     <div className="trend-chart">
-
-
-                        {/* Y Axis */}
-
-                        <div className="chart-y-axis">
-
-                            <span>
-                                {maxTrend.toLocaleString()}
-                            </span>
-
-                            <span>
-                                {Math.round(
-                                    maxTrend * 0.75
-                                ).toLocaleString()}
-                            </span>
-
-                            <span>
-                                {Math.round(
-                                    maxTrend * 0.5
-                                ).toLocaleString()}
-                            </span>
-
-                            <span>
-                                {Math.round(
-                                    maxTrend * 0.25
-                                ).toLocaleString()}
-                            </span>
-
-                            <span>0</span>
-
-                        </div>
-
-
                         <div className="chart-area">
-
-                            {/* Grid Lines */}
 
                             <div className="chart-grid">
                                 <span />
@@ -480,347 +252,115 @@ function Analytics() {
                                 <span />
                             </div>
 
-
-                            {/* Bars */}
-
                             <div className="bars">
-
-                                {trend.map(
-                                    (value, index) => (
-
-                                        <TrendBar
-                                            key={index}
-
-                                            value={Math.round(
-                                                value
-                                            ).toLocaleString()}
-
-                                            height={
-                                                (value /
-                                                    maxTrend) *
-                                                100
-                                            }
-
-                                            label={`W${trendData[index]
-                                                ?.week_number
-                                                }`}
-
-                                            color={trendSplit}
-                                        />
-
-                                    )
-                                )}
-
+                                {trend.map((value, index) => (
+                                    <TrendBar
+                                        key={index}
+                                        value={Math.round(value).toLocaleString()}
+                                        height={Math.max(3, (value / maxTrend) * 100)}
+                                        label={`W${trendData[index]?.week_number}`}
+                                        color={trendSplit}
+                                    />
+                                ))}
                             </div>
-
                         </div>
-
                     </div>
-
                 </Card>
 
-
-                {/* ==============================================
-                    23) Rollout Over Time
-                   ============================================== */}
-
+                {/* Rollout Over Time */}
                 <Card className="analytics-card">
-
                     <div className="section-header">
-
                         <div>
-
-                            <h2>
-                                Rollout Over Time
-                            </h2>
-
-                            <p>
-                                Sites going live per week
-                            </p>
-
+                            <h2>Rollout Over Time</h2>
+                            <p>Sites going live per week</p>
                         </div>
-
                     </div>
 
+                    {trendStatus === "error" && <ErrorInline onRetry={retryTrend} />}
 
-                    <div className="rollout-chart">
+                    {trendStatus === "loading" && (
+                        <div className="rollout-chart">
+                            <SkeletonLine width="100%" height={280} />
+                        </div>
+                    )}
 
-                        {rollout.map(
-                            (item, index) => (
-
+                    {trendStatus === "success" && (
+                        <div className="rollout-chart">
+                            {rollout.map((item, index) => (
                                 <RolloutBar
                                     key={index}
                                     value={item.value}
-                                    height={
-                                        (item.value /
-                                            maxRollout) *
-                                        100
-                                    }
+                                    height={(item.value / maxRollout) * 100}
                                     label={item.week}
                                 />
-
-                            )
-                        )}
-
-                    </div>
-
+                            ))}
+                        </div>
+                    )}
                 </Card>
-
             </div>
 
-
-            {/* ==================================================
-                24) Breakdowns
-                ثلاثة Cards:
-                - Type
-                - Effect
-                - Improvement
-               ================================================== */}
-
-            <div className="breakdown-grid">
-
-
-                {/* Type Breakdown */}
-
+            {/* Breakdowns: Type / Effect / Improvement */}
+            {kpiStatus === "error" ? (
                 <Card className="analytics-card">
-
-                    <div className="section-header">
-
-                        <div>
-                            <h2>
-                                By Enhancement Type
-                            </h2>
-
-                            <p>
-                                Enhancement distribution
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div className="breakdown-list">
-
-                        <BreakdownRow
-                            label="New Sites"
-                            count={newSites}
-                            percentage={percentage(
-                                newSites,
-                                newSites + upgrades
-                            )}
-                            color="orange"
-                        />
-
-                        <BreakdownRow
-                            label="Upgrades"
-                            count={upgrades}
-                            percentage={percentage(
-                                upgrades,
-                                newSites + upgrades
-                            )}
-                            color="teal"
-                        />
-
-                    </div>
-
+                    <ErrorInline onRetry={retryKpi} />
                 </Card>
+            ) : (
+                <div className="breakdown-grid">
+                    {breakdownCards.map((card) => (
+                        <BreakdownCard key={card.title} {...card} />
+                    ))}
+                </div>
+            )}
 
-
-                {/* Effect Breakdown */}
-
-                <Card className="analytics-card">
-
-                    <div className="section-header">
-
-                        <div>
-                            <h2>
-                                By Effect Type
-                            </h2>
-
-                            <p>
-                                Impact level distribution
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div className="breakdown-list">
-
-                        <BreakdownRow
-                            label="Major"
-                            count={major}
-                            percentage={percentage(
-                                major,
-                                major + minor
-                            )}
-                            color="gray"
-                        />
-
-                        <BreakdownRow
-                            label="Minor"
-                            count={minor}
-                            percentage={percentage(
-                                minor,
-                                major + minor
-                            )}
-                            color="gray"
-                        />
-
-                    </div>
-
-                </Card>
-
-
-                {/* Improvement Breakdown */}
-
-                <Card className="analytics-card">
-
-                    <div className="section-header">
-
-                        <div>
-                            <h2>
-                                By Improvement Type
-                            </h2>
-
-                            <p>
-                                Improvement type distribution
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div className="breakdown-list">
-
-                        <BreakdownRow
-                            label="Outdoor"
-                            count={outdoor}
-                            percentage={percentage(
-                                outdoor,
-                                outdoor + indoor
-                            )}
-                            color="orange"
-                        />
-
-                        <BreakdownRow
-                            label="Indoor"
-                            count={indoor}
-                            percentage={percentage(
-                                indoor,
-                                outdoor + indoor
-                            )}
-                            color="teal"
-                        />
-
-                    </div>
-
-                </Card>
-
-            </div>
-
-
-            {/* ==================================================
-                25) Customer Reach Leaderboard
-                ترتيب المواقع حسب عدد العملاء.
-               ================================================== */}
-
+            {/* Customer Reach Leaderboard */}
             <Card className="analytics-card leaderboard-card">
-
                 <div className="section-header">
-
                     <div>
-
-                        <h2>
-                            Customer Reach Leaderboard
-                        </h2>
-
-                        <p>
-                            Sites ranked by total customers
-                        </p>
-
+                        <h2>Enhancement Leaderboard</h2>
+                        <p>Ranked by customers reached · red bars are likely misconfigured or not yet live, not truly low-value</p>
                     </div>
-
-
-                    {/* إجمالي العملاء */}
-
-                    <strong className="total-customers">
-                        {totalCustomers.toLocaleString()}
-                    </strong>
-
+                    {kpiStatus === "success" && (
+                        <strong className="total-customers">{totalCustomers.toLocaleString()}</strong>
+                    )}
                 </div>
 
+                {kpiStatus === "error" && <ErrorInline onRetry={retryKpi} />}
 
-                {/* قائمة المواقع */}
+                {kpiStatus === "loading" && <SkeletonLine width="100%" height={160} />}
 
-                <div className="leaderboard">
-
-                    {leaderboard.map(
-                        (site, index) => (
-
-                            <div
-                                className="leaderboard-row"
-                                key={site.site_name}
-                            >
-
-                                {/* Rank */}
-
-                                <div className="rank">
-                                    #{index + 1}
-                                </div>
-
-
-                                {/* Site Info */}
+                {kpiStatus === "success" && (
+                    <div className="leaderboard">
+                        {leaderboard.map((site, index) => (
+                            <div className="leaderboard-row" key={site.site_name}>
+                                <div className="rank">#{index + 1}</div>
 
                                 <div>
-
-                                    <div className="site-name">
-                                        {site.site_name}
-                                    </div>
-
-                                    <div className="site-objective">
-                                        {site.objective}
-                                    </div>
-
+                                    <div className="site-name">{site.site_name}</div>
+                                    <div className="site-objective">{site.objective}</div>
                                 </div>
-
-
-                                {/* Progress Bar */}
 
                                 <div className="leaderboard-bar">
-
                                     <div
-                                        className="leaderboard-fill"
-                                        style={{
-                                            width:
-                                                `${site.percentage}%`,
-                                        }}
+                                        className={`leaderboard-fill ${site.performance}`}
+                                        style={{ width: `${site.percentage}%` }}
                                     />
-
                                 </div>
-
-
-                                {/* Customers */}
 
                                 <div className="customer-value">
                                     {site.customers_total.toLocaleString()}
+                                    {site.performance === "low" && (
+                                        <Badge variant="danger" className="investigate-badge">
+                                            ⚑ investigate
+                                        </Badge>
+                                    )}
                                 </div>
-
                             </div>
-
-                        )
-                    )}
-
-                </div>
-
+                        ))}
+                    </div>
+                )}
             </Card>
-
         </div>
     );
 }
-
-
-// ======================================================
-// 26) Export
-// بنخلي Analytics هو الـ default export
-// عشان AppRoutes يقدر يستورده.
-// ======================================================
 
 export default Analytics;

@@ -1,71 +1,19 @@
 .analytics-page {
-    padding: 32px;
+    padding: 36px 24px 32px;
     background: #f8f9fa;
     min-height: 100%;
     color: #1a1a1a;
 }
 
-.analytics-header {
-    margin-bottom: 20px;
-}
-
-.analytics-header h1 {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-}
-
-.analytics-header p {
-    margin: 8px 0 0;
-    color: #667085;
-    font-size: 14px;
-}
+/* =========================
+   Controls
+========================= */
 
 .analytics-controls {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.analytics-charts {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.analytics-card {
-    background: #ffffff;
-    border: 1px solid #e4e7ec;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 20px;
-}
-
-.analytics-charts .analytics-card {
-    margin-bottom: 0;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 20px;
-    margin-bottom: 28px;
-}
-
-.section-header h2,
-.analytics-card>h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.section-header p,
-.analytics-card>p {
-    margin: 6px 0 0;
-    color: #667085;
-    font-size: 13px;
+    align-items: center;
+    margin-bottom: 26px;
 }
 
 .control-group {
@@ -96,6 +44,118 @@
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
 }
 
+/* =========================
+   Week Pagination
+========================= */
+
+.week-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    background: #f2f4f7;
+    border: 1px solid #e4e7ec;
+    border-radius: 8px;
+
+    padding: 4px;
+    margin-left: auto;
+}
+
+.week-page-button {
+    width: 32px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 0;
+    border-radius: 6px;
+
+    background: transparent;
+    color: #667085;
+
+    font-size: 16px;
+    line-height: 1;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.week-page-button:hover:not(:disabled) {
+    background: #ffffff;
+    color: #1a1a1a;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+}
+
+.week-page-button:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.week-page-button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.week-page-info {
+    min-width: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #344054;
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+/* =========================
+   Charts
+========================= */
+
+.analytics-charts {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.analytics-card {
+    background: #ffffff;
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+}
+
+.analytics-charts .analytics-card {
+    margin-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.section-header h2,
+.analytics-card>h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.section-header p,
+.analytics-card>p {
+    margin: 6px 0 0;
+    color: #667085;
+    font-size: 13px;
+}
 
 /* =========================
    Weekly Trend
@@ -106,29 +166,26 @@
     display: flex;
 }
 
-.chart-y-axis {
-    width: 65px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 0 12px 32px 0;
-    color: #98a2b3;
-    font-size: 11px;
-    text-align: right;
-}
-
 .chart-area {
     flex: 1;
+    min-width: 0;
+    height: 100%;
     position: relative;
-    padding-bottom: 32px;
+    overflow: visible;
 }
 
 .chart-grid {
     position: absolute;
-    inset: 0 0 32px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 32px;
+
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
+    pointer-events: none;
 }
 
 .chart-grid span {
@@ -139,40 +196,66 @@
 .bars {
     position: relative;
     z-index: 2;
+
     width: 100%;
     height: calc(100% - 32px);
+
     display: flex;
     align-items: flex-end;
-    justify-content: space-around;
-    gap: 12px;
+    justify-content: space-between;
+
+    gap: 8px;
+    padding: 0 8px;
 }
 
 .bar-wrapper {
     position: relative;
+
     height: 100%;
-    flex: 1;
-    max-width: 70px;
+    flex: 1 1 0;
+    min-width: 0;
+
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
     flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
 }
 
-.trend-bar {
-    width: 60%;
-    min-width: 18px;
-    border-radius: 5px 5px 0 0;
-    transition: height 0.3s ease;
-    flex: 0 0 auto;
+/* الرقم والعمود مربوطين مع بعض */
+
+.bar-column {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+
+    flex-shrink: 0;
 }
 
 .bar-value {
-    position: absolute;
-    bottom: 100%;
     margin-bottom: 6px;
+
     color: #667085;
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: 600;
+
+    line-height: 1;
     white-space: nowrap;
+}
+
+.trend-bar {
+    width: 65%;
+    max-width: 42px;
+    min-width: 6px;
+
+    height: 100%;
+
+    border-radius: 5px 5px 0 0;
+
+    flex-shrink: 0;
+    transition: height 0.3s ease;
 }
 
 .trend-bar.both {
@@ -188,13 +271,13 @@
 }
 
 .week-label {
-    position: absolute;
-    bottom: 0;
-    transform: translateY(22px);
+    margin-top: 8px;
+
     color: #98a2b3;
     font-size: 11px;
-}
 
+    white-space: nowrap;
+}
 
 /* =========================
    Rollout
@@ -207,13 +290,15 @@
     justify-content: space-around;
     gap: 10px;
     padding-bottom: 32px;
+    overflow-x: auto;
 }
 
 .rollout-bar-wrapper {
     position: relative;
     height: 100%;
-    flex: 1;
+    flex: 0 0 45px;
     max-width: 45px;
+
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -229,8 +314,10 @@
 .rollout-bar {
     width: 55%;
     min-width: 12px;
+
     border-radius: 5px 5px 0 0;
-    background: #ff7900;
+    background: #98a2b3;
+
     transition: height 0.3s ease;
 }
 
@@ -239,7 +326,6 @@
     color: #98a2b3;
     font-size: 11px;
 }
-
 
 /* =========================
    Breakdowns
@@ -269,6 +355,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     margin-bottom: 8px;
     font-size: 13px;
 }
@@ -286,6 +373,7 @@
 .legend-dot {
     width: 8px;
     height: 8px;
+
     border-radius: 50%;
     display: inline-block;
 }
@@ -302,9 +390,14 @@
     background: #667085;
 }
 
+.legend-dot.purple {
+    background: #B692F6;
+}
+
 .progress-bar {
     width: 100%;
     height: 7px;
+
     background: #f2f4f7;
     border-radius: 20px;
     overflow: hidden;
@@ -327,13 +420,17 @@
     background: #667085;
 }
 
+.progress-fill.purple {
+    background: #B692F6;
+}
+
 .percentage {
     display: block;
     margin-top: 6px;
+
     color: #98a2b3;
     font-size: 11px;
 }
-
 
 /* =========================
    Leaderboard
@@ -356,6 +453,7 @@
 .leaderboard-row {
     display: grid;
     grid-template-columns: 45px 180px 1fr 80px;
+
     align-items: center;
     gap: 16px;
 }
@@ -372,35 +470,54 @@
 
 .site-objective {
     margin-top: 4px;
+
     color: #98a2b3;
     font-size: 11px;
 }
 
 .leaderboard-bar {
     height: 8px;
+
     background: #f2f4f7;
     border-radius: 20px;
+
     overflow: hidden;
 }
 
 .leaderboard-fill {
     height: 100%;
-    background: #ff7900;
     border-radius: 20px;
+}
+
+.leaderboard-fill.good {
+    background: #12b76a;
+}
+
+.leaderboard-fill.average {
+    background: #f79009;
+}
+
+.leaderboard-fill.low {
+    background: #f04438;
+}
+
+.investigate-badge {
+    margin-left: 8px;
 }
 
 .customer-value {
     text-align: right;
+
     font-size: 13px;
     font-weight: 600;
 }
-
 
 /* =========================
    Responsive
 ========================= */
 
 @media (max-width: 1000px) {
+
     .analytics-charts {
         grid-template-columns: 1fr;
     }
@@ -411,13 +528,24 @@
 }
 
 @media (max-width: 800px) {
+
     .section-header {
         flex-direction: column;
     }
 
     .analytics-controls {
         flex-direction: column;
+        align-items: stretch;
         gap: 10px;
+    }
+
+    .control-group {
+        width: fit-content;
+    }
+
+    .week-pagination {
+        margin-left: 0;
+        align-self: flex-start;
     }
 
     .leaderboard-row {
@@ -426,12 +554,27 @@
 }
 
 @media (max-width: 600px) {
+
     .analytics-page {
-        padding: 16px;
+        padding: 24px 16px;
     }
 
     .analytics-card {
         padding: 16px;
+    }
+
+    .week-pagination {
+        align-self: flex-start;
+    }
+
+    .week-page-button {
+        width: 30px;
+        height: 28px;
+    }
+
+    .week-page-info {
+        min-width: 58px;
+        font-size: 12px;
     }
 
     .leaderboard-row {

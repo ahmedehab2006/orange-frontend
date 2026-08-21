@@ -73,48 +73,18 @@ export const MOCK_KPIS = MOCK_SITES.map((s, i) => ({
  * GET /api/v1/analytics/trend
  */
 
-export const MOCK_ANALYTICS_TREND = [
-    {
-        week_number: 1,
-        customers_total: 100,
-        new_sites_total: 60,
-    },
-    {
-        week_number: 2,
-        customers_total: 140,
-        new_sites_total: 80,
-    },
-    {
-        week_number: 3,
-        customers_total: 180,
-        new_sites_total: 100,
-    },
-    {
-        week_number: 4,
-        customers_total: 220,
-        new_sites_total: 120,
-    },
-    {
-        week_number: 5,
-        customers_total: 260,
-        new_sites_total: 140,
-    },
-    {
-        week_number: 6,
-        customers_total: 310,
-        new_sites_total: 160,
-    },
-    {
-        week_number: 7,
-        customers_total: 350,
-        new_sites_total: 190,
-    },
-    {
-        week_number: 8,
-        customers_total: 390,
-        new_sites_total: 210,
-    },
-];
+export const MOCK_ANALYTICS_TREND = Array.from(
+    { length: 100 },
+    (_, i) => {
+        const week = i + 1;
+
+        return {
+            week_number: week,
+            customers_total: 100 + Math.round(i * 8 + Math.sin(i / 3) * 12),
+            new_sites_total: 60 + Math.round(i * 3.2 + Math.sin(i / 4) * 8),
+        };
+    }
+);
 /*
  * GET /api/v1/analytics/kpis
  */
@@ -184,6 +154,24 @@ export const MOCK_ANALYTICS_KPIS = [
         effect_type: "Minor",
         category: "Upgrade",
     },
+
+    {
+        site_name: "al alamen",
+        customers_total: 30,
+        improvement: "Outdoor",
+        objective: "Road",
+        effect_type: "Minor",
+        category: "Upgrade",
+    },
+
+    {
+        site_name: "al alamen",
+        customers_total: 49,
+        improvement: "Outdoor",
+        objective: "Road",
+        effect_type: "Minor",
+        category: "Upgrade",
+    }
 ];
 export function mockSiteDetail(siteCode) {
 
