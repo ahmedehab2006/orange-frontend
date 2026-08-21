@@ -6,7 +6,7 @@ import Dashboard from "../pages/Dashboard";
 import Analytics from "../pages/Analytics";
 import DialSearch from "../pages/Dial Search";
 import DataTable from "../pages/Data Table";
-import Upload from "../pages/Upload";
+
 
 function AppRoutes() {
     return (
@@ -16,7 +16,7 @@ function AppRoutes() {
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/dial-search" element={<DialSearch />} />
                 <Route path="/data-table" element={<DataTable />} />
-                <Route path="/upload" element={<Upload />} />
+
             </Route>
         </Routes>
     );

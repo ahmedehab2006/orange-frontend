@@ -1,110 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import './Dashboard.css';
-import { useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import 'leaflet/dist/leaflet.css';
-import { Badge, Card, Select, SkeletonLine, ErrorInline, BarRow, ListRow, Field } from "../Components.jsx";
+import { Badge, Card, Select, SkeletonLine, ErrorInline, BarRow, ListRow, Field, FiltersBar, DEFAULT_FILTERS } from "../Components.jsx";
 import { useApiData, API_CONFIG, MOCK_SITES, MOCK_KPIS, mockSiteDetail } from "../api.js";
 
-const DEFAULT_FILTERS = { category: "All", mode: "Year only", year: "2026", weekFrom: 18, weekTo: 27 };
-
-/* ==========================================================
-   شريط الفلاتر
-   ========================================================== */
-/* ========================================================== */
-/* ========================================================== */
-const DATE_MODES = ["Calendar dates", "Year + weeks", "Year only"];
-const CATEGORY_OPTIONS = ["All", "New Site", "Upgrade"];
-const YEAR_OPTIONS = ["2026", "2025", "2024"];
-const WEEK_FIELDS = [
-    { key: "weekFrom", label: "Week From", fallback: 18 },
-    { key: "weekTo", label: "Week To", fallback: 27 },
-];
-
-function FiltersBar({ draft, setDraft, onApply, onClear }) {
-    const patch = (key, value) => setDraft((d) => ({ ...d, [key]: value }));
-
-    // أول ما الكومبوننت يفتح، لو مفيش mode متحدد أو لو فاضي، خليه Year only تلقائياً
-    useEffect(() => {
-        if (!draft.mode) {
-            patch("mode", "Year only");
-        }
-        if (!draft.year) {
-            patch("year", "2026");
-        }
-    }, []);
-
-    const currentMode = draft.mode || "Year only";
-
-    return (
-        <div className="filters-bar">
-            <Select label="Category" value={draft.category} options={CATEGORY_OPTIONS} onChange={(v) => patch("category", v)} />
-
-            <div className="filter-group">
-                <span className="filter-label">Date Range Mode</span>
-                <div className="segmented">
-                    {DATE_MODES.map((m) => (
-                        <button
-                            key={m}
-                            type="button"
-                            className={m === currentMode ? "active" : ""}
-                            onClick={() => patch("mode", m)}
-                        >
-                            {m}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* عند اختيار Calendar dates تظهر حقول التاريخ From و To */}
-            {currentMode === "Calendar dates" ? (
-                <>
-                    <div className="filter-group">
-                        <span className="filter-label">From</span>
-                        <input
-                            type="date"
-                            className="filter-select filter-week"
-                            value={draft.fromDate || "2026-05-01"}
-                            onChange={(e) => patch("fromDate", e.target.value)}
-                        />
-                    </div>
-                    <div className="filter-group">
-                        <span className="filter-label">To</span>
-                        <input
-                            type="date"
-                            className="filter-select filter-week"
-                            value={draft.toDate || "2026-07-06"}
-                            onChange={(e) => patch("toDate", e.target.value)}
-                        />
-                    </div>
-                </>
-            ) : (
-                /* في الأوضاع الأخرى تظهر السنة فقط، وتختفي الأسابيع لو الوضع Year only */
-                <>
-                    <Select label="Year" value={draft.year || "2026"} options={YEAR_OPTIONS} onChange={(v) => patch("year", v)} />
-
-                    {currentMode === "Year + weeks" && WEEK_FIELDS.map(({ key, label, fallback }) => (
-                        <div className="filter-group" key={key}>
-                            <span className="filter-label">{label}</span>
-                            <input
-                                type="number"
-                                className="filter-select filter-week"
-                                value={draft[key] || fallback}
-                                onChange={(e) => patch(key, e.target.value)}
-                            />
-                        </div>
-                    ))}
-                </>
-            )}
-
-            <div className="filters-actions">
-                <button type="button" className="btn btn--outline" onClick={onClear}>Clear</button>
-                <button type="button" className="btn btn--primary" onClick={onApply}>Apply</button>
-            </div>
-        </div>
-    );
-}
 /* ==========================================================
    كروت الإحصائيات العلوية
    ========================================================== */

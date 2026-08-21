@@ -3,6 +3,7 @@
 
 import { useMemo, useState } from "react";
 import "./Analytics.css";
+import "./Dashboard.css"; // نفس ستايل شريط الفلاتر المستخدم في Dashboard
 
 import {
     API_CONFIG,
@@ -20,6 +21,8 @@ import {
     RolloutBar,
     SkeletonLine,
     ErrorInline,
+    FiltersBar,
+    DEFAULT_FILTERS,
 } from "../Components.jsx";
 
 const TREND_SPLIT_OPTIONS = [
@@ -28,72 +31,66 @@ const TREND_SPLIT_OPTIONS = [
     ["upgrade", "Upgrades"],
 ];
 
-const TREND_LEVEL_OPTIONS = [
-    ["site", "Site-level"],
-    ["cell", "Cell-level"],
-];
+// فلترة بيانات الـ trend حسب أسابيع الفلتر (نفس فكرة فلترة الـ category
+// في Dashboard: بنجهز الـ mock المفلتر ونمرره لـ useApiData بدل ما
+// نكرر منطق فلترة تاني بعد الجلب).
+function filterTrendByWeeks(data, filters) {
+    if (filters.mode !== "Year + weeks") return data;
+    const from = Number(filters.weekFrom) || 1;
+    const to = Number(filters.weekTo) || data.length;
+    return data.filter((item) => item.week_number >= from && item.week_number <= to);
+}
 
-// Show a compact fixed number of weeks at a time.
-// Pagination keeps the chart readable even with a long history.
-const WEEKS_PER_PAGE = 15;
-
-// Cell-level is derived from the site-level mock by scaling up —
-// there's no separate cell-level endpoint yet.
-const CELL_LEVEL_SCALE = 3.4;
+// فلترة الـ KPIs حسب الـ category — نفس المنطق المستخدم بالظبط في
+// Dashboard (filteredMockSites) لكن على بيانات الـ Analytics.
+function filterKpisByCategory(data, filters) {
+    if (filters.category === "All") return data;
+    return data.filter((item) => item.category === filters.category);
+}
 
 function Analytics() {
     const [trendSplit, setTrendSplit] = useState("both");
-    const [trendLevel, setTrendLevel] = useState("site");
-    const [weekPage, setWeekPage] = useState(0);
+    const [draft, setDraft] = useState(DEFAULT_FILTERS);
+    const [applied, setApplied] = useState(DEFAULT_FILTERS);
+
+    const filteredMockTrend = useMemo(
+        () => filterTrendByWeeks(MOCK_ANALYTICS_TREND, applied),
+        [applied.mode, applied.weekFrom, applied.weekTo]
+    );
+
+    const filteredMockKpis = useMemo(
+        () => filterKpisByCategory(MOCK_ANALYTICS_KPIS, applied),
+        [applied.category]
+    );
 
     const {
         data: trendResult,
         status: trendStatus,
         retry: retryTrend,
-    } = useApiData(API_CONFIG.endpoints.analyticsTrend, {}, MOCK_ANALYTICS_TREND);
+    } = useApiData(API_CONFIG.endpoints.analyticsTrend, applied, filteredMockTrend);
 
     const {
         data: kpiResult,
         status: kpiStatus,
         retry: retryKpi,
-    } = useApiData(API_CONFIG.endpoints.analyticsKpis, {}, MOCK_ANALYTICS_KPIS);
+    } = useApiData(API_CONFIG.endpoints.analyticsKpis, applied, filteredMockKpis);
 
-    const fullTrendData = trendResult || [];
+    const trendData = trendResult || [];
     const kpiData = kpiResult || [];
 
-    // Show only a compact page of weeks at a time.
-    const totalWeekPages = Math.max(
-        1,
-        Math.ceil(fullTrendData.length / WEEKS_PER_PAGE)
-    );
-
-    const currentWeekPage = Math.min(
-        weekPage,
-        totalWeekPages - 1
-    );
-
-    const startWeek = currentWeekPage * WEEKS_PER_PAGE;
-    const endWeek = startWeek + WEEKS_PER_PAGE;
-
-    const trendData = useMemo(() => {
-        return fullTrendData.slice(startWeek, endWeek);
-    }, [fullTrendData, startWeek, endWeek]);
-
-    // Weekly trend values, filtered by split (both/new/upgrade) and
-    // scaled by level (site/cell).
+    // Weekly trend values, filtered by split (both/new/upgrade).
     const trend = useMemo(() => {
         return trendData.map((item) => {
-            const scale = trendLevel === "cell" ? CELL_LEVEL_SCALE : 1;
-            const total = item.customers_total * scale;
-            const newSites = item.new_sites_total * scale;
+            const total = item.customers_total;
+            const newSites = item.new_sites_total;
 
             if (trendSplit === "new") return newSites;
             if (trendSplit === "upgrade") return total - newSites;
             return total;
         });
-    }, [trendData, trendSplit, trendLevel]);
+    }, [trendData, trendSplit]);
 
-    // Scale the visible 15-week page to the available chart height.
+    // Scale the visible weeks to the available chart height.
     const maxTrend = Math.max(...trend, 1);
 
     // Sites going live per week (mock calculation on the frontend).
@@ -178,7 +175,7 @@ function Analytics() {
 
     const totalCustomers = kpiData.reduce((sum, item) => sum + item.customers_total, 0);
 
-    const trendSubtitle = `${trendLevel === "site" ? "Site-level" : "Cell-level"} · ${trendSplit === "both"
+    const trendSubtitle = `Weekly customers reached · ${trendSplit === "both"
         ? "New + Upgrades combined"
         : trendSplit === "new"
             ? "New sites only"
@@ -187,46 +184,15 @@ function Analytics() {
 
     return (
         <div className="analytics-page">
+            <FiltersBar
+                draft={draft}
+                setDraft={setDraft}
+                onApply={() => setApplied(draft)}
+                onClear={() => { setDraft(DEFAULT_FILTERS); setApplied(DEFAULT_FILTERS); }}
+            />
+
             <div className="analytics-controls">
                 <ToggleGroup options={TREND_SPLIT_OPTIONS} value={trendSplit} onChange={setTrendSplit} />
-
-                <div className="analytics-right-controls">
-                    <div className="week-pagination">
-                        <button
-                            className="week-page-button"
-                            onClick={() =>
-                                setWeekPage((page) => Math.max(page - 1, 0))
-                            }
-                            disabled={weekPage === 0}
-                            aria-label="Previous weeks"
-                        >
-                            ‹
-                        </button>
-
-                        <span className="week-page-info">
-                            {startWeek + 1}–{Math.min(endWeek, trendData.length)}
-                        </span>
-
-                        <button
-                            className="week-page-button"
-                            onClick={() =>
-                                setWeekPage((page) =>
-                                    Math.min(page + 1, totalWeekPages - 1)
-                                )
-                            }
-                            disabled={weekPage >= totalWeekPages - 1}
-                            aria-label="Next weeks"
-                        >
-                            ›
-                        </button>
-                    </div>
-
-                    <ToggleGroup
-                        options={TREND_LEVEL_OPTIONS}
-                        value={trendLevel}
-                        onChange={setTrendLevel}
-                    />
-                </div>
             </div>
 
             <div className="analytics-charts">
@@ -235,36 +201,48 @@ function Analytics() {
                     <div className="section-header">
                         <div>
                             <h2>Customers Reached — Weekly Trend</h2>
-                            <p>
-                                Weekly customers reached through network enhancements
-                            </p>
+                            <p>{trendSubtitle}</p>
                         </div>
                     </div>
 
-                    <div className="trend-chart">
-                        <div className="chart-area">
+                    {trendStatus === "error" && <ErrorInline onRetry={retryTrend} />}
 
-                            <div className="chart-grid">
-                                <span />
-                                <span />
-                                <span />
-                                <span />
-                                <span />
-                            </div>
+                    {trendStatus === "loading" && (
+                        <div className="trend-chart">
+                            <SkeletonLine width="100%" height={300} />
+                        </div>
+                    )}
 
-                            <div className="bars">
-                                {trend.map((value, index) => (
-                                    <TrendBar
-                                        key={index}
-                                        value={Math.round(value).toLocaleString()}
-                                        height={Math.max(3, (value / maxTrend) * 100)}
-                                        label={`W${trendData[index]?.week_number}`}
-                                        color={trendSplit}
-                                    />
-                                ))}
+                    {trendStatus === "success" && (
+                        <div className="trend-chart">
+                            <div className="chart-area">
+
+                                <div className="chart-grid">
+                                    <span />
+                                    <span />
+                                    <span />
+                                    <span />
+                                    <span />
+                                </div>
+
+                                {/* منطقة قابلة للتمرير أفقيًا لما عدد الأسابيع يكبر عن
+                                    المساحة المتاحة، بدل ما الأعمدة تتضغط جوه الكارت. */}
+                                <div className="bars-scroll">
+                                    <div className="bars">
+                                        {trend.map((value, index) => (
+                                            <TrendBar
+                                                key={index}
+                                                value={Math.round(value).toLocaleString()}
+                                                height={Math.max(3, (value / maxTrend) * 100)}
+                                                label={`W${trendData[index]?.week_number}`}
+                                                color={trendSplit}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </Card>
 
                 {/* Rollout Over Time */}
