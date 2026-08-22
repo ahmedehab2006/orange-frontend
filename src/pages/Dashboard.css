@@ -1,12 +1,14 @@
-/* ================== تنسيقات صفحة Dashboard فقط ================== */
+/* ================== تنسيقات صفحة Dashboard ================== */
+
 .page-container {
-    padding: 28px 32px;
+    padding: 20px 32px 32px;
+    /* مسافة مريحة فوق الفلاتر */
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
 }
 
-/* شريط الفلاتر */
+/* ================== شريط الفلاتر ================== */
 .filters-bar {
     background: var(--color-white);
     border: 1px solid var(--color-border);
@@ -20,7 +22,6 @@
     box-sizing: border-box;
 }
 
-/* تنسيق حقول إدخال التاريخ لتتوافق مع تصميم الفلاتر الحالية وتحسين العرض */
 input[type="date"],
 .filter-week[type="date"] {
     background: var(--color-white, #fff);
@@ -41,8 +42,6 @@ input[type="date"]:focus,
     border-color: var(--color-orange, #ff7900);
 }
 
-/* زرارين Clear و Apply — بيفضلوا مع بعض ومرميين لأقصى اليمين،
-   ولو المساحة ضاقت ينزلوا سطر جديد سوا بدل ما يتقسموا أو يخرجوا برا الكارت */
 .filters-actions {
     display: flex;
     flex-wrap: nowrap;
@@ -80,14 +79,13 @@ input[type="date"]:focus,
 
 .filter-week {
     width: 60px !important;
-    /* تحديد عرض ثابت وصغير بالبكسل بدلاً من ch لضمان النتيجة */
     min-width: 0 !important;
     max-width: 50px !important;
     padding: 6px 8px !important;
     text-align: center;
 }
 
-/* كروت الإحصائيات */
+/* ================== كروت الإحصائيات (تصميم ملموم - Compact) ================== */
 .stat-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -95,32 +93,71 @@ input[type="date"]:focus,
     align-items: stretch !important;
 }
 
-/* تصغير الهوامش الداخلية للكروت لتصبح المسافات فوق وتحت الرقم أصغر وأجمل */
+/* تقليل الهوامش الداخلية للكارت نفسه */
 .stat-grid .card {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start !important;
     height: 100% !important;
     box-sizing: border-box;
-    padding: 16px 20px !important;
-    /* تقليل الـ padding العلوي والسفلي */
+    padding: 14px 18px !important;
 }
 
-/* تقليل المسافة فوق وتحت الرقم مباشرة */
+.stat-card-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* الهيدر: العنوان شمال والأيقونة يمين */
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.stat-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-dark);
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* تنسيق مربع الأيقونة */
+.stat-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+}
+
+.stat-content {
+    margin-top: 0;
+}
+
+/* تصغير الرقم عشان يتناسب مع المساحة الملمومة */
 .stat-value {
-    font-size: 30px;
-    font-weight: 800;
+    font-size: 32px !important;
+    font-weight: 900;
     color: var(--color-text-dark);
     line-height: 1;
-    margin-top: 6px !important;
-    margin-bottom: 6px !important;
-    /* تقليل المسافة السفلية للرقم لتناسب الشكل المطلوب */
+    margin-top: 0 !important;
+    margin-bottom: 4px !important;
 }
 
 .stat-sub {
     font-size: var(--text-sm);
     color: var(--color-text-muted);
     margin-top: 0;
+}
+
+.stat-sub,
+.stat-sub span {
+    color: #10b981 !important;
+    font-weight: 600 !important;
 }
 
 .stat-grid .card h3,
@@ -133,19 +170,8 @@ input[type="date"]:focus,
     margin-bottom: 0 !important;
 }
 
-/* تعديل لون علامة التحسن والنسبة لتكون باللون الأخضر الواضح */
-.stat-sub,
-.stat-sub span {
-    color: #10b981 !important;
-    font-weight: 600 !important;
-}
-
-/* ضبط الكارت الرابع (Cells by Technology) ليتطابق مع باقي الكروت */
 .stat-grid .card:last-child {
-    display: flex;
-    flex-direction: column;
     justify-content: space-between !important;
-    padding: 16px 20px !important;
 }
 
 .stat-grid .card:last-child .tech-row {
@@ -156,9 +182,7 @@ input[type="date"]:focus,
     margin-top: 4px !important;
 }
 
-/* نسب التكنولوجيا (خصوصية لمنطق الداشبورد نفسه - العرض العام لـ BarRow نقلته للملف المشترك) */
-
-/* الخريطة */
+/* ================== الخريطة والكروت السفلية ================== */
 .map-card {
     padding: var(--space-lg) 22px;
 }
@@ -167,6 +191,10 @@ input[type="date"]:focus,
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 0;
+}
+
+.map-card-header .card-title {
     margin-bottom: 0;
 }
 
@@ -188,6 +216,14 @@ input[type="date"]:focus,
     width: 10px;
     height: 10px;
     border-radius: 50%;
+}
+
+.legend-dot--new {
+    background: var(--color-orange);
+}
+
+.legend-dot--upgrade {
+    background: var(--color-teal);
 }
 
 .legend-toggle {
@@ -248,12 +284,8 @@ input[type="date"]:focus,
     overflow: hidden;
 }
 
-.map-dot {
-    position: absolute;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .15);
+.map-popup-title {
+    font-weight: 700;
 }
 
 .map-loading {
@@ -266,7 +298,31 @@ input[type="date"]:focus,
     font-size: var(--text-sm);
 }
 
-/* النافذة المنبثقة (Modal) */
+/* شبكة الكارتين تحت الخريطة */
+.dashboard-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.reach-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reach-code {
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.top-reach-value {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--color-text-dark);
+}
+
+/* ================== المودال (النافذة المنبثقة) ================== */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -277,7 +333,6 @@ input[type="date"]:focus,
     z-index: 50;
 }
 
-/* نسخة من الـ overlay بتفتح المودال من الجنب (لتفاصيل الموقع) */
 .modal-overlay--side {
     justify-content: flex-end;
     align-items: stretch;
@@ -309,6 +364,13 @@ input[type="date"]:focus,
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: var(--space-md);
+}
+
+.modal-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
 }
 
 .modal-close {
@@ -355,11 +417,34 @@ input[type="date"]:focus,
     margin-bottom: 12px;
 }
 
+.modal-tech-label {
+    margin-bottom: 8px;
+}
+
+.tech-chip-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 .modal-big-number {
     font-size: 28px;
     font-weight: 900;
     color: var(--color-text-dark);
     margin: 4px 0 12px;
+}
+
+.modal-trend-caption {
+    margin-top: 4px;
+}
+
+.modal-cell-name {
+    font-weight: 600;
+    color: var(--color-text-dark);
+}
+
+.modal-cell-count {
+    font-weight: 800;
 }
 
 .modal-actions {
@@ -373,7 +458,6 @@ input[type="date"]:focus,
     flex: 1;
 }
 
-/* شبكة الحقول جوه المودال (تخطيط خاص بالمودال، لكن .field-label و .field-value اتنقلوا للملف المشترك) */
 .field-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -381,7 +465,6 @@ input[type="date"]:focus,
     margin-bottom: var(--space-lg);
 }
 
-/* شرائح التكنولوجيا داخل المودال */
 .tech-chip {
     background: var(--color-grey-bg);
     padding: 4px 10px;
@@ -391,7 +474,6 @@ input[type="date"]:focus,
     color: var(--color-text-dark);
 }
 
-/* أعمدة اتجاه الوصول (8 أسابيع) */
 .trend-bars {
     display: flex;
     align-items: flex-end;
@@ -406,5 +488,3 @@ input[type="date"]:focus,
     background: var(--color-orange);
     border-radius: 2px 2px 0 0;
 }
-
-/* .empty-state و .detail-row (بتاعة ListRow) اتنقلوا للملف المشترك لأنهم مش خاصين بالداشبورد بس */

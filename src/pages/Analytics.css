@@ -128,9 +128,7 @@
 }
 
 /* Scrolls horizontally only when the bars need more room than the
-   card has — the grid lines above stay put as a fixed reference.
-   overflow-y stays visible so the number label above a full-height
-   bar never gets clipped off. */
+   card has — the grid lines above stay put as a fixed reference. */
 .bars-scroll {
     position: relative;
     z-index: 2;
@@ -139,7 +137,7 @@
     height: calc(100% - 32px);
 
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
 }
 
 .bars {
@@ -150,7 +148,7 @@
     align-items: flex-end;
 
     gap: 0.2px;
-    padding: 22px 8px 0;
+    padding: 0 8px;
 }
 
 .bar-wrapper {
@@ -235,9 +233,8 @@
     align-items: flex-end;
     justify-content: space-around;
     gap: 0.2px;
-    padding: 22px 0 32px;
+    padding-bottom: 32px;
     overflow-x: auto;
-    overflow-y: visible;
 }
 
 .rollout-bar-wrapper {

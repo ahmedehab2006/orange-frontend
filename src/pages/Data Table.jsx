@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from "react";
+import { useOutletContext } from "react-router-dom";
 import { Card, Badge, SkeletonLine, ErrorInline } from "../Components.jsx";
 import { API_CONFIG, MOCK_DATA_TABLE, useApiData } from "../api.js";
-import { Search, ChevronRight, ChevronDown, Download } from "lucide-react";
+import { ChevronRight, ChevronDown, Download } from "lucide-react";
 import "./DataTable.css";
 
 export default function DataTable() {
-  const [searchQuery, setSearchQuery] = useState("");
+  // استقبال قيمة البحث القادمة من الهيدر عبر الـ AppLayout[cite: 2]
+  const outletContext = useOutletContext() || {};
+  const searchQuery = outletContext.searchQuery || "";
+
   const [expandedSites, setExpandedSites] = useState({});
   const [techFilter, setTechFilter] = useState("All");
   const [objectiveFilter, setObjectiveFilter] = useState("All");
@@ -17,6 +21,36 @@ export default function DataTable() {
   );
 
   const dataList = Array.isArray(apiData) ? apiData : MOCK_DATA_TABLE;
+
+  // دالة لتصدير البيانات الحالية إلى ملف CSV
+  const handleExportCSV = () => {
+    if (!filteredData || filteredData.length === 0) return;
+
+    const headers = ["Site / Cell", "Code", "Type", "Tech", "Go-Live", "Cells", "Customers Reached"];
+    const rows = filteredData.map(item => [
+      `"${item.site_name || ""}"`,
+      `"${item.site_code || ""}"`,
+      `"${item.category || ""}"`,
+      `"${Array.isArray(item.technology) ? item.technology.join("+") : ""}"`,
+      `"${item.go_live_date || ""}"`,
+      item.cells_count || 0,
+      item.customers_total || 0
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "site_data_table.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const filteredData = useMemo(() => {
     if (!Array.isArray(dataList)) return [];
@@ -39,31 +73,17 @@ export default function DataTable() {
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "100%", padding: "0 16px", boxSizing: "border-box" }}>
-      {/* الهيدر العلوي وعنوان الصفحة */}
-      <div className="table-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-
-        <div style={{ position: "relative", width: "320px" }}>
-          <div className="header-search" style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "0 12px", background: "#fff", border: "1px solid var(--color-border)", borderRadius: 8 }}>
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Search site, code, or dial number"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ border: "none", outline: "none", width: "100%", height: "38px" }}
-            />
-          </div>
-        </div>
-      </div>
+    <div className="datatable-page">
 
       {/* شريط التحكم (الفلاتر وزر التصدير) */}
-      <div className="analytics-controls" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "16px", background: "var(--color-white)", padding: "12px 16px", borderRadius: "12px", border: "1px solid var(--color-border)", width: "100%", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+      <div className="datatable-controls">
+        <div className="datatable-controls-actions">
           <select className="filter-select" value={techFilter} onChange={(e) => setTechFilter(e.target.value)}>
             <option value="All">All technologies</option>
             <option value="U900">U900</option>
             <option value="4G">4G</option>
+            <option value="2G">2G</option>
+            <option value="3G">3G</option>
           </select>
 
           <select className="filter-select" value={objectiveFilter} onChange={(e) => setObjectiveFilter(e.target.value)}>
@@ -74,37 +94,38 @@ export default function DataTable() {
             <option value="Densification">Densification</option>
           </select>
 
-          <button className="btn btn--outline" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button
+            className="btn btn--outline btn--icon"
+            onClick={handleExportCSV}
+          >
             <Download size={15} /> Export CSV
           </button>
         </div>
       </div>
 
-
-
       {/* الجدول الرئيسي الممتد بعرض الشاشة مع دعم التمرير للكميات الكبيرة */}
-      <Card style={{ padding: 0, width: "100%", overflow: "hidden" }}>
-        {status === "loading" && <div style={{ padding: 20 }}><SkeletonLine width="100%" height={300} /></div>}
-        {status === "error" && <div style={{ padding: 20 }}><ErrorInline onRetry={retry} /></div>}
+      <Card className="table-card">
+        {status === "loading" && <div className="table-status-pad"><SkeletonLine width="100%" height={300} /></div>}
+        {status === "error" && <div className="table-status-pad"><ErrorInline onRetry={retry} /></div>}
 
         {status === "success" && (
-          <div style={{ width: "100%", overflowX: "auto", maxHeight: "650px", overflowY: "auto" }}>
-            <table className="custom-data-table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", minWidth: "900px" }}>
-              <thead style={{ position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
+          <div className="table-responsive">
+            <table className="custom-data-table">
+              <thead className="table-head-sticky">
                 <tr>
-                  <th style={{ padding: "14px 20px", color: "#64748b", borderBottom: "1px solid #ddd" }}>SITE / CELL</th>
-                  <th style={{ padding: "14px 20px", color: "#64748b", borderBottom: "1px solid #ddd" }}>CODE</th>
-                  <th style={{ padding: "14px 20px", color: "#64748b", borderBottom: "1px solid #ddd" }}>TYPE</th>
-                  <th style={{ padding: "14px 20px", color: "#64748b", borderBottom: "1px solid #ddd" }}>TECH</th>
-                  <th style={{ padding: "14px 20px", color: "#64748b", borderBottom: "1px solid #ddd" }}>GO-LIVE</th>
-                  <th style={{ padding: "14px 20px", color: "#64748b", borderBottom: "1px solid #ddd" }}>CELLS</th>
-                  <th style={{ padding: "14px 20px", color: "#64748b", borderBottom: "1px solid #ddd", textAlign: "right" }}>CUSTOMERS REACHED</th>
+                  <th>SITE / CELL</th>
+                  <th>CODE</th>
+                  <th>TYPE</th>
+                  <th>TECH</th>
+                  <th>GO-LIVE</th>
+                  <th>CELLS</th>
+                  <th className="col-right">CUSTOMERS REACHED</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+                    <td colSpan="7" className="empty-state">
                       No matching data found.
                     </td>
                   </tr>
@@ -116,43 +137,43 @@ export default function DataTable() {
 
                     return (
                       <React.Fragment key={item.site_code}>
-                        <tr style={{ background: "#fff" }}>
-                          <td style={{ padding: "14px 20px", borderBottom: "1px solid #ddd" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <tr>
+                          <td>
+                            <div className="site-name-wrap">
                               {hasCells && (
-                                <span style={{ cursor: "pointer", display: "flex", alignItems: "center" }} onClick={() => toggleExpand(item.site_code)}>
+                                <span className="expand-toggle" onClick={() => toggleExpand(item.site_code)}>
                                   {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                 </span>
                               )}
-                              <span style={{ fontWeight: 700, color: "#1a1d29" }}>{item.site_name}</span>
+                              <span className="cell-site-name">{item.site_name}</span>
                             </div>
                           </td>
-                          <td style={{ padding: "14px 20px", borderBottom: "1px solid #ddd", color: "#64748b", fontFamily: "monospace" }}>{item.site_code}</td>
-                          <td style={{ padding: "14px 20px", borderBottom: "1px solid #ddd" }}>
+                          <td className="cell-code">{item.site_code}</td>
+                          <td>
                             <Badge variant={item.category === "New Site" ? "new" : "upgrade"} shape="pill">
                               {item.category}
                             </Badge>
                           </td>
-                          <td style={{ padding: "14px 20px", borderBottom: "1px solid #ddd" }}>{Array.isArray(item.technology) ? item.technology.join("+") : ""}</td>
-                          <td style={{ padding: "14px 20px", borderBottom: "1px solid #ddd", color: "#64748b" }}>{item.go_live_date}</td>
-                          <td style={{ padding: "14px 20px", borderBottom: "1px solid #ddd" }}>{item.cells_count}</td>
-                          <td style={{ padding: "14px 20px", borderBottom: "1px solid #ddd", textAlign: "right", fontWeight: 800, color: "#1a1d29" }}>
+                          <td>{Array.isArray(item.technology) ? item.technology.join("+") : ""}</td>
+                          <td className="cell-muted">{item.go_live_date}</td>
+                          <td>{item.cells_count}</td>
+                          <td className="cell-customers">
                             {item.customers_total ? item.customers_total.toLocaleString() : 0}
                           </td>
                         </tr>
 
                         {/* عرض الخلايا للـ Upgrade فقط عند التوسيع */}
                         {hasCells && isExpanded && item.cells.map((cellObj, idx) => (
-                          <tr key={`${item.site_code}-cell-${idx}`} style={{ background: "#f8f9fa" }}>
-                            <td style={{ padding: "10px 20px 10px 44px", borderBottom: "1px solid #ddd", color: "#64748b", fontSize: "12px" }}>
+                          <tr key={`${item.site_code}-cell-${idx}`} className="cell-row">
+                            <td className="cell-row-indent">
                               ↳ {cellObj.cell}
                             </td>
-                            <td style={{ borderBottom: "1px solid #ddd" }}></td>
-                            <td style={{ borderBottom: "1px solid #ddd" }}></td>
-                            <td style={{ padding: "10px 20px", borderBottom: "1px solid #ddd", fontSize: "12px", color: "#64748b" }}>{Array.isArray(item.technology) ? item.technology[0] : ""}</td>
-                            <td style={{ borderBottom: "1px solid #ddd" }}></td>
-                            <td style={{ borderBottom: "1px solid #ddd" }}></td>
-                            <td style={{ padding: "10px 20px", borderBottom: "1px solid #ddd", textAlign: "right", fontWeight: 700, fontSize: "12px", color: "#1a1d29" }}>
+                            <td></td>
+                            <td></td>
+                            <td className="cell-row-tech">{Array.isArray(item.technology) ? item.technology[0] : ""}</td>
+                            <td></td>
+                            <td></td>
+                            <td className="cell-row-count">
                               {cellObj.count ? cellObj.count.toLocaleString() : 0}
                             </td>
                           </tr>

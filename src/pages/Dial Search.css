@@ -2,6 +2,70 @@
    Dial Search Page Styles
    ========================= */
 
+   .search-card-title {
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.search-card-subtitle {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.search-form {
+    display: flex;
+    gap: 12px;
+}
+
+.search-input-wrap {
+    position: relative;
+    flex: 1;
+}
+
+.try-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.result-dial-label {
+    margin-bottom: 4px;
+}
+
+.result-dial-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--color-text-dark);
+}
+
+.result-grid-fields .field-value {
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+.map-caption {
+    position: absolute;
+    bottom: 4px;
+    left: 8px;
+    font-size: 10px;
+    color: #667085;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2px 4px;
+    border-radius: 4px;
+    z-index: 1000;
+}
+
 .phone-search-input {
     width: 100%;
     height: 42px;

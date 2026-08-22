@@ -161,13 +161,23 @@ body {
   background: #e56d00;
 }
 
-/* الفلاتر (Filters) */
+/* زرار فيه أيقونة جنب النص (Export CSV, Search...) — بدل ما كل صفحة
+   تكرر display:flex + gap inline */
+.btn--icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
 
+/* الفلاتر (Filters) */
 .filter-group {
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
   width: max-content;
+  gap: 8px;
+  /* ← السطر ده هو اللي هيعمل المسافة بين العنوان والفلتر */
 }
 
 .filter-label {
@@ -346,6 +356,13 @@ body {
   padding: var(--space-md);
 }
 
+
+/* عنصر خريطة Leaflet لازم يملي الكونتينر بتاعه — مستخدمة في أكتر من صفحة
+   (Dashboard, DialSearch) بدل ما كل صفحة تكرر style={{height:'100%'...}} */
+.leaflet-fill {
+  height: 100%;
+  width: 100%;
+}
 
 /* ================== Header ================== */
 

@@ -1,37 +1,61 @@
 import React, { useState, useMemo } from "react";
-import { X } from "lucide-react";
+import { X, MapPin, TrendingUp, Radio } from "lucide-react";
 import './Dashboard.css';
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import 'leaflet/dist/leaflet.css';
-import { Badge, Card, Select, SkeletonLine, ErrorInline, BarRow, ListRow, Field, FiltersBar, DEFAULT_FILTERS } from "../Components.jsx";
+import { Badge, Card, SkeletonLine, ErrorInline, BarRow, ListRow, Field, FiltersBar, DEFAULT_FILTERS } from "../Components.jsx";
 import { useApiData, API_CONFIG, MOCK_SITES, MOCK_KPIS, mockSiteDetail } from "../api.js";
 
 /* ==========================================================
-   كروت الإحصائيات العلوية
+   كروت الإحصائيات العلوية (بالتصميم الملموم والأيقونات)
    ========================================================== */
-function StatCard({ label, value, sub, loading }) {
+function StatCard({ label, value, sub, loading, icon: Icon, iconColor, iconBg }) {
+    if (!Icon) {
+        return (
+            <Card>
+                <div className="stat-label" style={{ marginBottom: '12px' }}>{label}</div>
+                {loading ? <SkeletonLine width="40%" height={28} /> : (
+                    <div className="stat-content">
+                        <div className="stat-value">{value}</div>
+                        {sub && <div className="stat-sub">{sub}</div>}
+                    </div>
+                )}
+            </Card>
+        );
+    }
+
     return (
         <Card>
-            <div className="stat-label">{label}</div>
-            {loading ? <SkeletonLine width="40%" height={28} /> : (
-                <>
-                    <div className="stat-value">{value}</div>
-                    {sub && <div className="stat-sub">{sub}</div>}
-                </>
-            )}
+            <div className="stat-card-inner">
+                <div className="stat-header">
+                    <div className="stat-label">{label}</div>
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: iconBg }}>
+                        <Icon size={18} color={iconColor} />
+                    </div>
+                </div>
+
+                {loading ? <SkeletonLine width="40%" height={28} /> : (
+                    <div className="stat-content">
+                        <div className="stat-value">{value}</div>
+                        {sub && <div className="stat-sub">{sub}</div>}
+                    </div>
+                )}
+            </div>
         </Card>
     );
 }
 
 function buildStatsSummary(sites, kpis) {
-    const newSites = 8;
-    const upgradedSites = 7;
-    const totalCells = 64;
+    const siteList = sites || [];
+    const newSites = siteList.filter((s) => s.category === "New Site").length;
+    const upgradedSites = siteList.filter((s) => s.category === "Upgrade").length;
+    const totalCells = siteList.reduce((sum, s) => sum + (s.total_cells || 0), 0);
+    const totalSites = siteList.length;
 
     const techMap = {};
     (kpis || []).forEach((k) => {
-        (k.technologies || []).forEach((t) => {
-            techMap[t.technology] = (techMap[t.technology] || 0) + (t.cells || 0);
+        (k.cells_technology || []).forEach((t) => {
+            techMap[t.technology] = (techMap[t.technology] || 0) + (t.count || 0);
         });
     });
     const techTotal = Object.values(techMap).reduce((a, b) => a + b, 0) || 1;
@@ -45,11 +69,11 @@ function buildStatsSummary(sites, kpis) {
         newSites,
         upgradedSites,
         totalCells,
-        totalSites: 15,
+        totalSites,
         techBreakdown,
-        newSitesSub: "▲ 2 vs last period",
-        upgradedSitesSub: "▲ 1 vs last period",
-        totalCellsSub: "across 15 sites"
+        newSitesSub: null,
+        upgradedSitesSub: null,
+        totalCellsSub: totalSites ? `across ${totalSites} sites` : null,
     };
 }
 
@@ -63,11 +87,36 @@ function StatCards({ sitesStatus, sites, kpis, onRetry }) {
 
     return (
         <div className="stat-grid">
-            <StatCard label="New Sites" value={summary.newSites} sub={summary.newSitesSub} loading={loading} />
-            <StatCard label="Upgraded Sites" value={summary.upgradedSites} sub={summary.upgradedSitesSub} loading={loading} />
-            <StatCard label="Total Cells Affected" value={summary.totalCells} sub={summary.totalCellsSub} loading={loading} />
+            <StatCard
+                label="New Sites"
+                value={summary.newSites}
+                sub={summary.newSitesSub}
+                loading={loading}
+                icon={MapPin}
+                iconColor="var(--color-orange)"
+                iconBg="var(--color-orange-bg)"
+            />
+            <StatCard
+                label="Upgraded Sites"
+                value={summary.upgradedSites}
+                sub={summary.upgradedSitesSub}
+                loading={loading}
+                icon={TrendingUp}
+                iconColor="var(--color-teal)"
+                iconBg="var(--color-teal-bg)"
+            />
+            <StatCard
+                label="Total Cells Affected"
+                value={summary.totalCells}
+                sub={summary.totalCellsSub}
+                loading={loading}
+                icon={Radio}
+                iconColor="#475467"
+                iconBg="#f2f4f7"
+            />
+
             <Card>
-                <div className="stat-label">Cells by Technology</div>
+                <div className="stat-label" style={{ marginTop: '4px', marginBottom: '12px' }}>Cells by Technology</div>
                 {loading
                     ? [1, 2, 3, 4].map((i) => <div className="tech-row" key={i}><SkeletonLine width="100%" height={6} /></div>)
                     : summary.techBreakdown.map((t) => <BarRow key={t.name} label={t.name} display={t.value} percent={t.percent} color={t.color} />)
@@ -80,24 +129,7 @@ function StatCards({ sitesStatus, sites, kpis, onRetry }) {
 /* ==========================================================
    خريطة القاهرة الكبرى
    ========================================================== */
-const DOT_COLOR = { new: "var(--color-orange)", upgrade: "#0e9384" };
-
-function projectSites(sites) {
-    if (!sites || sites.length === 0) return [];
-    const lats = sites.map((s) => s.lat), longs = sites.map((s) => s.long);
-    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const minLong = Math.min(...longs), maxLong = Math.max(...longs);
-    const cellsMax = Math.max(...sites.map((s) => s.total_cells), 1);
-
-    return sites.map((s) => ({
-        id: s.site_code,
-        x: maxLong === minLong ? 50 : ((s.long - minLong) / (maxLong - minLong)) * 90 + 5,
-        y: maxLat === minLat ? 50 : (1 - (s.lat - minLat) / (maxLat - minLat)) * 90 + 5,
-        size: 12 + (s.total_cells / cellsMax) * 16,
-        type: s.category === "New Site" ? "new" : "upgrade",
-        raw: s,
-    }));
-}
+const MAP_MARKER_COLOR = { new: "#ff7900", upgrade: "#0e9384" };
 
 function EnhancementMap({ sitesStatus, sites, onRetry, onSelectSite }) {
     const [heatmap, setHeatmap] = useState(false);
@@ -106,18 +138,17 @@ function EnhancementMap({ sitesStatus, sites, onRetry, onSelectSite }) {
     return (
         <Card className="map-card">
             <div className="map-card-header">
-                <div className="card-title" style={{ marginBottom: 0 }}>Enhancement Map — Greater Cairo</div>
+                <div className="map-header-left">
+                    <h2 className="map-card-title">Enhancement Map</h2>
+                    <p className="map-coords">CAIRO / GIZA METRO · 30.04°N, 31.24°E</p>
+                </div>
                 <div className="map-legend">
-                    <span className="legend-item"><span className="legend-dot" style={{ background: DOT_COLOR.new }} />New Sites</span>
-                    <span className="legend-item"><span className="legend-dot" style={{ background: DOT_COLOR.upgrade }} />Upgrades</span>
-                    <span className="legend-toggle">
-                        <span className={`toggle ${heatmap ? "on" : ""}`} onClick={() => setHeatmap((v) => !v)}><span className="toggle-knob" /></span> Customer reach heatmap
-                    </span>
+                    <span className="legend-item"><span className="legend-dot legend-dot--new" />New Sites</span>
+                    <span className="legend-item"><span className="legend-dot legend-dot--upgrade" />Upgrades</span>
                 </div>
             </div>
-            <div className="map-coords">Cairo / Giza Metro · 30.04°N, 31.24°E</div>
 
-            <div className="map-area" style={{ height: '420px', width: '100%', borderRadius: 'var(--radius-md)', overflow: 'hidden', position: 'relative' }}>
+            <div className="map-area">
                 {sitesStatus === "loading" && <div className="map-loading">جاري تحميل الخريطة الحقيقية…</div>}
                 {sitesStatus === "error" && <div className="map-loading"><ErrorInline onRetry={onRetry} /></div>}
 
@@ -125,7 +156,8 @@ function EnhancementMap({ sitesStatus, sites, onRetry, onSelectSite }) {
                     <MapContainer
                         center={[30.0444, 31.2357]}
                         zoom={11}
-                        style={{ height: '100%', width: '100%' }}
+                        className="leaflet-fill"
+                        style={{ height: "100%", width: "100%" }}
                         scrollWheelZoom={false}
                     >
                         <TileLayer
@@ -135,8 +167,8 @@ function EnhancementMap({ sitesStatus, sites, onRetry, onSelectSite }) {
 
                         {validSites.map((s) => {
                             const isNew = s.category === "New Site";
-                            const color = isNew ? "#f97316" : "#0e9384";
-                            const radius = Math.min(Math.max(s.total_cells * 1.5, 8), 22);
+                            const color = isNew ? MAP_MARKER_COLOR.new : MAP_MARKER_COLOR.upgrade;
+                            const radius = Math.min(Math.max((s.total_cells || 1) * 1.5, 8), 22);
 
                             return (
                                 <CircleMarker
@@ -154,7 +186,7 @@ function EnhancementMap({ sitesStatus, sites, onRetry, onSelectSite }) {
                                     }}
                                 >
                                     <Popup>
-                                        <div style={{ fontWeight: 'bold' }}>{s.site_code}</div>
+                                        <div className="map-popup-title">{s.site_code}</div>
                                         <div>{s.category}</div>
                                     </Popup>
                                 </CircleMarker>
@@ -183,17 +215,19 @@ function TopReachCard({ sites }) {
                 <ListRow
                     key={item.site_code}
                     left={
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div className="reach-left">
                             <Badge variant={item.category === "New Site" ? 'new' : 'upgrade'} shape="tag">
                                 {item.category === "New Site" ? 'N' : 'U'}
                             </Badge>
                             <div>
-                                <div style={{ fontWeight: 700, color: 'var(--color-text-dark)' }}>{item.site_code}</div>
+                                <div className="reach-code">{item.site_code}</div>
                                 <div className="field-label">{item.objective || item.improvement_type || 'General'}</div>
                             </div>
                         </div>
                     }
-                    right={<span style={{ fontWeight: 800, fontSize: 16, color: 'var(--color-text-dark)' }}>{item.total_cells * 120 || 1500}</span>}
+                    right={
+                        <span className="top-reach-value">{item.total_cells || 0} cells</span>
+                    }
                 />
             ))}
         </Card>
@@ -201,20 +235,20 @@ function TopReachCard({ sites }) {
 }
 
 /* ==========================================================
-   كارت التحسينات حسب الهدف
+   كارت التحسينات حسب الهدف (معدل ليقرأ من KPIs)
    ========================================================== */
-function EnhancementsByObjectiveCard({ sites }) {
+function EnhancementsByObjectiveCard({ kpis }) {
     const objectiveMap = {};
-    (sites || []).forEach((s) => {
-        const obj = s.objective || 'Densification';
+    (kpis || []).forEach((k) => {
+        const obj = k.objective || 'General';
         objectiveMap[obj] = (objectiveMap[obj] || 0) + 1;
     });
 
-    const totalSites = (sites || []).length || 1;
+    const totalSites = (kpis || []).length || 1;
     const objectivesList = Object.entries(objectiveMap).map(([name, count]) => ({
         name, count, percent: `${Math.round((count / totalSites) * 100)}%`,
     }));
-    const displayList = objectivesList.length > 0 ? objectivesList : [{ name: "Densification", count: 0, percent: "0%" }];
+    const displayList = objectivesList.length > 0 ? objectivesList : [{ name: "General", count: 0, percent: "0%" }];
 
     return (
         <Card title="Enhancements by Objective">
@@ -239,76 +273,90 @@ function siteDetailFields(data) {
 const TREND_HEIGHTS = [35, 42, 50, 55, 65, 70, 75, 85];
 
 function SiteDetailModal({ siteCode, onClose }) {
+    const { data, status } = useApiData(
+        siteCode ? API_CONFIG.endpoints.siteDetail(siteCode) : null,
+        {},
+        siteCode ? mockSiteDetail(siteCode) : null,
+        { enabled: !!siteCode }
+    );
+
     if (!siteCode) return null;
-    const data = mockSiteDetail(siteCode);
 
     return (
         <div className="modal-overlay modal-overlay--side" onClick={onClose}>
             <div className="modal-panel modal-panel--detail" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                            <Badge variant="new">{data.category || 'New Build'}</Badge>
-                            <span className="field-label">{data.site_code}</span>
+
+                {status === "loading" && <div className="empty-state" style={{ marginTop: 'auto', marginBottom: 'auto' }}>جاري تحميل التفاصيل...</div>}
+                {status === "error" && <div className="empty-state" style={{ color: 'var(--color-red)', marginTop: 'auto', marginBottom: 'auto' }}>فشل تحميل البيانات</div>}
+
+                {status === "success" && data && (
+                    <>
+                        <div className="modal-header">
+                            <div>
+                                <div className="modal-header-meta">
+                                    <Badge variant="new">{data.category || 'New Build'}</Badge>
+                                    <span className="field-label">{data.site_code}</span>
+                                </div>
+                                <h2 className="modal-title">{data.site_name}</h2>
+                                <div className="field-label">Go-live {data.go_live_date}</div>
+                            </div>
+                            <button className="modal-close" onClick={onClose}><X size={18} /></button>
                         </div>
-                        <h2 className="modal-title">{data.site_name}</h2>
-                        <div className="field-label">Go-live {data.go_live_date}</div>
-                    </div>
-                    <button className="modal-close" onClick={onClose}><X size={18} /></button>
-                </div>
 
-                <hr className="modal-divider" />
+                        <hr className="modal-divider" />
 
-                <div className="modal-body">
-                    <div className="field-grid">
-                        {siteDetailFields(data).map((f) => <Field key={f.label} {...f} />)}
-                    </div>
+                        <div className="modal-body">
+                            <div className="field-grid">
+                                {siteDetailFields(data).map((f) => <Field key={f.label} {...f} />)}
+                            </div>
 
-                    <div className="modal-section">
-                        <div className="field-label" style={{ marginBottom: 8 }}>TECHNOLOGIES</div>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            {data.technologies?.filter((t) => t.cells > 0).map((t) => (
-                                <span key={t.technology} className="tech-chip">{t.technology} ({t.cells})</span>
-                            ))}
+                            <div className="modal-section">
+                                <div className="field-label modal-tech-label">TECHNOLOGIES</div>
+                                <div className="tech-chip-list">
+                                    {data.technologies?.filter((t) => t.count > 0).map((t) => (
+                                        <span key={t.technology} className="tech-chip">{t.technology} ({t.count})</span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <hr className="modal-divider" />
+
+                            <div className="modal-section">
+                                <div className="field-label">CUSTOMERS REACHED</div>
+                                <div className="modal-big-number">{data.customers_total}</div>
+                                <div className="trend-bars">
+                                    {TREND_HEIGHTS.map((h, i) => <div key={i} className="trend-bar" style={{ height: `${h}%` }} />)}
+                                </div>
+                                <div className="field-label modal-trend-caption">8-week trend</div>
+                            </div>
+
+                            {data.cells?.length > 0 && (
+                                <div className="modal-section">
+                                    <div className="modal-section-title">Cells on site ({data.cells.length})</div>
+                                    {data.cells.map((cell) => (
+                                        <ListRow
+                                            key={cell.cgi}
+                                            left={<span className="modal-cell-name">{cell.cgi}</span>}
+                                            right={<span className="modal-cell-count">{cell.customers_total} customers</span>}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="modal-actions">
+                                <button className="btn btn--outline">View customer list</button>
+                                <button className="btn btn--primary">Export</button>
+                            </div>
                         </div>
-                    </div>
-
-                    <hr className="modal-divider" />
-
-                    <div className="modal-section">
-                        <div className="field-label">CUSTOMERS REACHED</div>
-                        <div className="modal-big-number">{data.customers_total}</div>
-                        <div className="trend-bars">
-                            {TREND_HEIGHTS.map((h, i) => <div key={i} className="trend-bar" style={{ height: `${h}%` }} />)}
-                        </div>
-                        <div className="field-label" style={{ marginTop: 4 }}>8-week trend</div>
-                    </div>
-
-                    {data.cells?.length > 0 && (
-                        <div className="modal-section">
-                            <div className="modal-section-title">Cells on site ({data.cells.length})</div>
-                            {data.cells.map((cell) => (
-                                <ListRow
-                                    key={cell.cgi}
-                                    left={<span style={{ fontWeight: 600, color: 'var(--color-text-dark)' }}>{cell.cgi}</span>}
-                                    right={<span style={{ fontWeight: 800 }}>{cell.customers_total} customers</span>}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="modal-actions">
-                        <button className="btn btn--outline">View customer list</button>
-                        <button className="btn btn--primary">Export</button>
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
         </div>
     );
 }
 
 /* ==========================================================
-   صفحة الداشبورد نفسها
+   صفحة الداشبورد الرئيسية
    ========================================================== */
 export default function Dashboard() {
     const [draft, setDraft] = useState(DEFAULT_FILTERS);
@@ -340,9 +388,9 @@ export default function Dashboard() {
                 onRetry={retrySites} onSelectSite={setSelectedSite}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="dashboard-grid-2col">
                 <TopReachCard sites={sites} />
-                <EnhancementsByObjectiveCard sites={sites} />
+                <EnhancementsByObjectiveCard kpis={kpis} />
             </div>
 
             <SiteDetailModal siteCode={selectedSite} onClose={() => setSelectedSite(null)} />

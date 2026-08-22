@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -15,17 +16,24 @@ export default function AppLayout() {
     const location = useLocation();
     const title = PAGE_TITLES[location.pathname] || 'NEI';
 
+    // تعريف حالة البحث هنا لتكون مشتركة بين الهيدر وصفحة الداتا تيبل
+    const [searchQuery, setSearchQuery] = useState('');
+
     return (
         <div className="app-layout">
             <Sidebar />
             <div className="main-content">
-                <Header title={title} />
+                {/* تمرير الـ searchQuery و setSearchQuery للهيدر */}
+                <Header
+                    title={title}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                />
 
-                {/* الجزء الجديد اللي هيعمل المسافات المظبوطة للصفحات */}
+                {/* تمرير الـ searchQuery للـ Outlet لكي تستقبله صفحة DataTable */}
                 <div className="page-wrapper">
-                    <Outlet />
+                    <Outlet context={{ searchQuery, setSearchQuery }} />
                 </div>
-
             </div>
         </div>
     );
